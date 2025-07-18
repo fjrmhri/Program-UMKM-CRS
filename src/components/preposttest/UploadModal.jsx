@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { db } from "../firebase";
+import { db } from "../../firebase";
 import { ref, set } from "firebase/database";
 import { v4 as uuidv4 } from "uuid";
-import { parseExcel, computeStats } from "../utils/excelUtils";
+import { parseExcel, computeStats } from "../../utils/excelUtils";
 import Spinner from "./Spinner";
 
 export default function UploadModal({ onClose, onSuccess }) {
@@ -49,9 +49,11 @@ export default function UploadModal({ onClose, onSuccess }) {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-6 rounded shadow-lg w-full max-w-lg space-y-4"
+        className="bg-white p-3 sm:p-6 rounded shadow-lg w-full max-w-xs sm:max-w-lg space-y-3 sm:space-y-4"
       >
-        <h2 className="text-xl font-bold">Tambah Data Pre-Post Test</h2>
+        <h2 className="text-lg sm:text-xl font-bold">
+          Tambah Data Pre-Post Test
+        </h2>
 
         <div>
           <label className="block mb-1 font-medium">Nama Data</label>
@@ -64,7 +66,7 @@ export default function UploadModal({ onClose, onSuccess }) {
           />
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
           <div className="flex-1">
             <label className="block mb-1 font-medium">Tanggal Pre Test</label>
             <input
@@ -98,18 +100,18 @@ export default function UploadModal({ onClose, onSuccess }) {
           />
         </div>
 
-        <div className="flex justify-between items-center pt-2">
+        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center pt-2 gap-2">
           <button
             type="submit"
             disabled={loading}
-            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+            className="bg-green-500 text-white px-3 py-2 rounded text-sm sm:text-base hover:bg-green-600 w-full sm:w-auto"
           >
             {loading ? <Spinner /> : "Submit"}
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="text-gray-600 hover:underline"
+            className="text-gray-600 hover:underline w-full sm:w-auto"
           >
             Batal
           </button>
