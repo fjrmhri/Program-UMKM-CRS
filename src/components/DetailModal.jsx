@@ -60,9 +60,10 @@ export default function DetailModal({ data, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-start pt-10 overflow-y-auto">
-      <div className="bg-white p-6 rounded shadow w-full max-w-4xl space-y-4">
-        <h2 className="text-2xl font-bold">{title}</h2>
-        <div className="text-sm text-gray-600 space-y-1">
+      <div className="bg-white p-4 sm:p-5 md:p-6 rounded shadow w-full sm:max-w-md md:max-w-2xl lg:max-w-4xl space-y-4 mx-2 sm:mx-auto">
+        <h2 className="text-xl sm:text-2xl font-bold break-words">{title}</h2>
+
+        <div className="text-xs sm:text-sm text-gray-600 space-y-1">
           <p>
             📆 Tanggal Pre Test: {new Date(preDate).toLocaleDateString("id-ID")}
           </p>
@@ -72,9 +73,11 @@ export default function DetailModal({ data, onClose }) {
           </p>
         </div>
 
-        <ChartComp raw={filteredRaw} />
+        <div className="overflow-x-auto">
+          <ChartComp raw={filteredRaw} />
+        </div>
 
-        <div className="space-y-1 text-sm mt-4">
+        <div className="space-y-1 text-xs sm:text-sm mt-4">
           <p>👥 Jumlah peserta: {analyses.total}</p>
           <p>📊 Rata-rata Pre Test: {analyses.avgPre.toFixed(2)}</p>
           <p>📈 Rata-rata Post Test: {analyses.avgPost.toFixed(2)}</p>
@@ -82,7 +85,7 @@ export default function DetailModal({ data, onClose }) {
           <p>✅ Peserta yang paham (≥70): {analyses.paham} orang</p>
           <div className="mt-2">
             <p className="font-semibold">Distribusi:</p>
-            <ul className="list-disc ml-6">
+            <ul className="list-disc ml-4 sm:ml-6">
               <li>Rendah (&lt;60): {distribusi.rendah} orang</li>
               <li>Cukup (60-69): {distribusi.cukup} orang</li>
               <li>Tinggi (70-84): {distribusi.tinggi} orang</li>
@@ -91,7 +94,7 @@ export default function DetailModal({ data, onClose }) {
           </div>
         </div>
 
-        <div className="flex gap-4 mt-4">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mt-4">
           <select
             value={selectedPosyandu}
             onChange={(e) => setSelectedPosyandu(e.target.value)}
@@ -113,8 +116,8 @@ export default function DetailModal({ data, onClose }) {
           </button>
         </div>
 
-        <div className="overflow-x-auto max-h-64 border rounded mt-2">
-          <table className="min-w-full text-sm text-left">
+        <div className="overflow-x-auto max-h-64 border rounded mt-2 text-xs sm:text-sm">
+          <table className="min-w-full text-left">
             <thead className="bg-gray-100">
               <tr>
                 <th className="p-2">Nama</th>
@@ -140,14 +143,17 @@ export default function DetailModal({ data, onClose }) {
           </table>
         </div>
 
-        <div className="flex justify-between items-center pt-4">
+        <div className="flex flex-col sm:flex-row justify-between items-center pt-4 gap-2 sm:gap-0">
           <button
             onClick={handleExport}
-            className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
+            className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 w-full sm:w-auto"
           >
             Ekspor Excel
           </button>
-          <button onClick={onClose} className="text-gray-600 hover:underline">
+          <button
+            onClick={onClose}
+            className="text-gray-600 hover:underline w-full sm:w-auto text-center"
+          >
             Tutup
           </button>
         </div>
