@@ -13,20 +13,22 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-50">
       {}
-      <header className="py-6 bg-white shadow">
-        <h1 className="text-3xl font-bold text-center">
+      <header className="py-4 md:py-6 bg-white shadow">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-center">
           Program Corporate Social Responsibility
         </h1>
-        <h5 className="text-2xl text-center">estate cerenti</h5>
+        <h5 className="text-lg sm:text-xl md:text-2xl text-center">
+          estate cerenti
+        </h5>
       </header>
 
       {}
-      <nav className="bg-white shadow mb-6">
-        <ul className="flex justify-center space-x-4 py-2 text-lg">
+      <nav className="bg-white shadow mb-4 md:mb-6">
+        <ul className="flex flex-wrap justify-center gap-2 sm:gap-4 py-2 text-base sm:text-lg">
           <li
-            className={`px-4 py-2 cursor-pointer ${
+            className={`px-2 sm:px-4 py-2 cursor-pointer ${
               activeMenu === "analytics"
-                ? "border-b-4 border-blue-500 font-semibold text-blue-600"
+                ? "border-b-2 sm:border-b-4 border-blue-500 font-semibold text-blue-600"
                 : "text-gray-600 hover:text-gray-800"
             }`}
             onClick={() => setActiveMenu("analytics")}
@@ -34,9 +36,9 @@ export default function App() {
             Analisis Pre‑Post Test
           </li>
           <li
-            className={`px-4 py-2 cursor-pointer ${
+            className={`px-2 sm:px-4 py-2 cursor-pointer ${
               activeMenu === "todo"
-                ? "border-b-4 border-blue-500 font-semibold text-blue-600"
+                ? "border-b-2 sm:border-b-4 border-blue-500 font-semibold text-blue-600"
                 : "text-gray-600 hover:text-gray-800"
             }`}
             onClick={() => setActiveMenu("todo")}
@@ -46,7 +48,7 @@ export default function App() {
         </ul>
       </nav>
 
-      <main className="max-w-5xl mx-auto px-4">
+      <main className="container mx-auto px-2 sm:px-4 max-w-5xl">
         {}
         {activeMenu === "analytics" && (
           <>
