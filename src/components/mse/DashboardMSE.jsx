@@ -91,12 +91,6 @@ export default function DashboardMSE({
                       >
                         {d.comparison ? "Edit Perbandingan" : "Banding"}
                       </button>
-                      <button
-                        onClick={() => onEdit(d)}
-                        className="bg-green-50 text-green-600 px-2 py-1 rounded text-xs hover:bg-green-100 transition w-full sm:w-auto"
-                      >
-                        Edit
-                      </button>
                     </div>
                   </td>
                 </tr>
