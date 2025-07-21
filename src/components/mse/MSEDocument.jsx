@@ -6,8 +6,23 @@ import {
   View,
   StyleSheet,
   Image,
+  Font,
 } from "@react-pdf/renderer";
 import logo from "../../assets/logo.PNG";
+import calibri from "../../assets/fonts/calibri-regular.ttf";
+import calibriBold from "../../assets/fonts/calibri-bold.ttf";
+import calibriItalic from "../../assets/fonts/calibri-italic.ttf";
+import calibriBoldItalic from "../../assets/fonts/calibri-bold-italic.ttf";
+
+Font.register({
+  family: "Calibri",
+  fonts: [
+    { src: calibri },
+    { src: calibriBold, fontWeight: "bold" },
+    { src: calibriItalic, fontStyle: "italic" },
+    { src: calibriBoldItalic, fontWeight: "bold", fontStyle: "italic" },
+  ],
+});
 
 const styles = StyleSheet.create({
   page: {
@@ -15,13 +30,13 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 30,
     paddingHorizontal: 40,
-    fontFamily: "Helvetica",
+    fontFamily: "Calibri",
   },
   logo: {
-    width: 60,
-    height: 60,
+    width: 100,
+    height: 100,
     position: "absolute",
-    top: 20,
+    top: -15,
     left: 40,
   },
   header: {
@@ -33,39 +48,38 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   titleSub: {
-    fontSize: 12,
+    fontSize: 14,
+    fontWeight: "bold",
   },
   formTitle: {
-    fontSize: 12,
+    fontSize: 14,
     marginTop: 10,
     marginBottom: 10,
     textAlign: "center",
-    textDecoration: "underline",
-    fontWeight: "bold",
   },
   metaContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     marginBottom: 10,
   },
-  metaLeft: {
-    width: "50%",
-  },
-  metaRight: {
+  metaColumn: {
     width: "50%",
   },
   metaRow: {
     flexDirection: "row",
     marginBottom: 4,
+    alignItems: "flex-start",
+    paddingLeft: 10,
   },
   label: {
     width: "50%",
     fontWeight: "bold",
+    textAlign: "left",
+    paddingRight: 10,
   },
   value: {
     width: "50%",
   },
-
   table: {
     display: "table",
     width: "auto",
@@ -73,6 +87,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRightWidth: 0,
     borderBottomWidth: 0,
+    marginTop: 10,
   },
   tableRow: {
     flexDirection: "row",
@@ -99,18 +114,18 @@ const styles = StyleSheet.create({
 const MSEDocument = ({ data }) => {
   const { meta, monitoring, comparison } = data;
 
-  const metaLeft = [
+  const metaData = [
     ["Nama Pelaku/Pemilik/Lembaga UMKM", meta.nama],
     ["Nama Usaha/Merk Produk", meta.usaha],
     ["Nomor HP/WA", meta.hp],
     ["Desa", meta.desa],
-  ];
-  const metaRight = [
     ["Kota/Kabupaten", meta.kota],
     ["Estate", meta.estate],
     ["Nama CDO", meta.cdo],
     ["Klasifikasi Mitra", meta.klasifikasi],
   ];
+
+  const transparentUraians = ["Uraian 1", "Uraian 2"];
 
   return (
     <Document>
@@ -126,18 +141,17 @@ const MSEDocument = ({ data }) => {
           </Text>
         </View>
 
-        {}
         <View style={styles.metaContainer}>
-          <View style={styles.metaLeft}>
-            {metaLeft.map(([label, val]) => (
+          <View style={styles.metaColumn}>
+            {metaData.slice(0, 4).map(([label, val]) => (
               <View key={label} style={styles.metaRow}>
                 <Text style={styles.label}>{label}:</Text>
                 <Text style={styles.value}>{val || "-"}</Text>
               </View>
             ))}
           </View>
-          <View style={styles.metaRight}>
-            {metaRight.map(([label, val]) => (
+          <View style={styles.metaColumn}>
+            {metaData.slice(4).map(([label, val]) => (
               <View key={label} style={styles.metaRow}>
                 <Text style={styles.label}>{label}:</Text>
                 <Text style={styles.value}>{val || "-"}</Text>
@@ -146,7 +160,6 @@ const MSEDocument = ({ data }) => {
           </View>
         </View>
 
-        {}
         <View style={styles.table}>
           <View style={styles.tableRow}>
             <Text style={[styles.tableColHeader, styles.col1]}>Uraian</Text>
@@ -162,28 +175,24 @@ const MSEDocument = ({ data }) => {
           </View>
 
           {monitoring.map((row, i) => {
-            if (row.uraian === "Omset / penjualan per bulan") {
-              return (
-                <View key={i} style={styles.tableRow}>
-                  <Text style={[styles.tableCol, styles.col1]}>
-                    {row.uraian}
-                  </Text>
-                  <Text style={[styles.tableCol, styles.col2]}>Rp</Text>
-                  <Text style={[styles.tableCol, styles.col3]}>
-                    {row.items[0]?.hasil || "-"}
-                  </Text>
-                  {comparison && (
-                    <Text style={[styles.tableCol, styles.col3]}>
-                      {comparison[i]?.items[0]?.hasil || "-"}
-                    </Text>
-                  )}
-                </View>
-              );
-            }
+            const showUraian = row.items.length > 0;
+            const isTransparent = transparentUraians.includes(row.uraian);
 
             return row.items.map((item, j) => (
               <View key={`${i}-${j}`} style={styles.tableRow}>
-                <Text style={[styles.tableCol, styles.col1]}>{row.uraian}</Text>
+                {showUraian && j === 0 ? (
+                  <Text style={[styles.tableCol, styles.col1]}>
+                    {row.uraian}
+                  </Text>
+                ) : (
+                  <Text
+                    style={[
+                      styles.tableCol,
+                      styles.col1,
+                      { opacity: isTransparent ? 0 : 1 },
+                    ]}
+                  ></Text>
+                )}
                 <Text style={[styles.tableCol, styles.col2]}>
                   {item.nama || "-"}
                 </Text>

@@ -68,33 +68,32 @@ export default function DashboardMSE({
                   <td className="px-2 py-2">{d.meta?.desa}</td>
 
                   <td className="px-2 py-2">
-                    <div className="flex flex-wrap gap-2">
+                    <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
                       <button
                         onClick={() => onView(d)}
-                        className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs hover:bg-blue-100 transition"
+                        className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs hover:bg-blue-100 transition w-full sm:w-auto"
                       >
                         Detail
                       </button>
                       <button
                         onClick={() => handleDelete(d.id)}
-                        className="bg-red-50 text-red-600 px-2 py-1 rounded text-xs hover:bg-red-100 transition"
+                        className="bg-red-50 text-red-600 px-2 py-1 rounded text-xs hover:bg-red-100 transition w-full sm:w-auto"
                       >
                         Hapus
                       </button>
                       <button
                         onClick={() => onCompare(d)}
-                        className={`px-2 py-1 rounded text-xs font-semibold transition ${
+                        className={`px-2 py-1 rounded text-xs font-semibold transition w-full sm:w-auto ${
                           d.comparison
                             ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
                             : "bg-yellow-500 text-white hover:bg-yellow-600"
                         }`}
-                        style={{ marginLeft: "2px" }}
                       >
                         {d.comparison ? "Edit Perbandingan" : "Banding"}
                       </button>
                       <button
                         onClick={() => onEdit(d)}
-                        className="bg-green-50 text-green-600 px-2 py-1 rounded text-xs hover:bg-green-100 transition"
+                        className="bg-green-50 text-green-600 px-2 py-1 rounded text-xs hover:bg-green-100 transition w-full sm:w-auto"
                       >
                         Edit
                       </button>
