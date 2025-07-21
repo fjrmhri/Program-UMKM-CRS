@@ -43,7 +43,7 @@ export default function Dashboard({ onAdd, onView }) {
             <thead className="bg-gray-100">
               <tr>
                 <th className="px-2 py-2 sm:px-3 text-left">Judul</th>
-                {/* Tanggal hanya tampil di md ke atas */}
+                {}
                 <th className="px-2 py-2 sm:px-3 text-left hidden md:table-cell">
                   Pre
                 </th>
@@ -58,7 +58,7 @@ export default function Dashboard({ onAdd, onView }) {
               {datasets.map((d) => (
                 <tr key={d.id} className="border-t">
                   <td className="px-2 py-2 sm:px-3">{d.title}</td>
-                  {/* Tanggal hanya tampil di md ke atas */}
+                  {}
                   <td className="px-2 py-2 sm:px-3 hidden md:table-cell">
                     {new Date(d.preDate).toLocaleDateString("id-ID")}
                   </td>
@@ -69,13 +69,13 @@ export default function Dashboard({ onAdd, onView }) {
                   <td className="px-2 py-2 sm:px-3 space-x-1 sm:space-x-2">
                     <button
                       onClick={() => onView(d)}
-                      className="text-blue-600 hover:underline text-xs sm:text-sm"
+                      className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs hover:bg-blue-100 transition"
                     >
                       Detail
                     </button>
                     <button
                       onClick={() => handleDelete(d.id)}
-                      className="text-red-500 hover:underline text-xs sm:text-sm"
+                      className="bg-red-50 text-red-600 px-2 py-1 rounded text-xs hover:bg-red-100 transition"
                     >
                       Hapus
                     </button>

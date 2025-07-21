@@ -55,3 +55,50 @@ export function computeStats(data) {
 
   return { total, avgPre, avgPost, peningkatan, paham, selisih };
 }
+
+export async function parseExcelMSE(file) {
+  const ext = file.name.split(".").pop().toLowerCase();
+  if (!["xlsx", "xls"].includes(ext))
+    throw new Error("File harus .xlsx atau .xls");
+
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(await file.arrayBuffer());
+  const ws = wb.worksheets[0];
+
+  const rows = [];
+  ws.eachRow((row, idx) => {
+    if (idx === 1) return; // skip header
+    rows.push(row.values.slice(1));
+  });
+  if (!rows.length) throw new Error("Data kosong!");
+
+  const [
+    nama,
+    usaha,
+    hp,
+    desa,
+    kota,
+    estate,
+    cdo,
+    klasifikasi,
+    ...monitoringRaw
+  ] = rows[0];
+  const meta = { nama, usaha, hp, desa, kota, estate, cdo, klasifikasi };
+
+  const monitoringTemplate = [
+    "Jumlah produksi per bulan",
+    "Jumlah tenaga kerja tetap",
+    "Jumlah tenaga kerja tidak tetap",
+    "Omset / penjualan per bulan",
+    "Biaya operasional per bulan",
+    "Masalah yang dihadapi",
+    "Hasil tindak lanjut dari monitoring sebelumnya",
+  ];
+  const monitoring = monitoringTemplate.map((uraian, i) => ({
+    uraian,
+    item: "",
+    hasil: monitoringRaw[i] ?? "",
+  }));
+
+  return { meta, monitoring };
+}
