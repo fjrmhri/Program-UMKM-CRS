@@ -3,15 +3,6 @@ import { db } from "../../firebase";
 import { ref, set } from "firebase/database";
 import { v4 as uuidv4 } from "uuid";
 
-function formatIDR(value) {
-  if (value === "" || value === null || value === undefined) return "";
-  return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-}
-function parseIDR(str) {
-  if (!str) return 0;
-  return Number(str.replace(/,/g, ""));
-}
-
 const monitoringTemplate = [
   {
     uraian: "Jumlah produksi per bulan",
@@ -53,7 +44,8 @@ const monitoringTemplate = [
       { nama: "Bahan baku", hasil: "" },
       { nama: "Tenaga kerja", hasil: "" },
       { nama: "Listrik", hasil: "" },
-      { nama: "Lainnya", hasil: "" },
+      { nama: "Lainnya(sebutkan)", hasil: "" },
+      { nama: "Total", hasil: "" },
     ],
     allowAdd: true,
     defaultItems: ["Bahan baku", "Tenaga kerja", "Listrik", "Lainnya"],
@@ -61,16 +53,26 @@ const monitoringTemplate = [
   },
   {
     uraian: "Masalah yang dihadapi",
-    items: [{ nama: "", hasil: "" }],
+    items: [
+      { nama: "Permasalahan", hasil: "" },
+      { nama: "Rencana tindak lanjut", hasil: "" },
+    ],
     allowAdd: true,
-    defaultItems: [],
+    defaultItems: ["Permasalahan", "Rencana tindak lanjut"],
     showItem: true,
   },
   {
     uraian: "Hasil tindak lanjut dari monitoring sebelumnya",
-    items: [{ nama: "", hasil: "" }],
+    items: [
+      {
+        nama: "Hasil rencana tindak lanjut dari permasalahan di monitoring sebelumnya",
+        hasil: "",
+      },
+    ],
     allowAdd: true,
-    defaultItems: [],
+    defaultItems: [
+      "Hasil rencana tindak lanjut dari permasalahan di monitoring sebelumnya",
+    ],
     showItem: true,
   },
 ];
@@ -92,10 +94,33 @@ export default function FormModalMSE({ onClose }) {
     setMeta({ ...meta, [e.target.name]: e.target.value });
   };
 
+  const formatNumber = (value) => {
+    if (!value) return "";
+
+    // Pisahkan angka di awal dari sisanya
+    const match = value.match(/^([\d,.]+)(.*)$/); // Ambil angka + sisa teks
+
+    if (!match) return value; // Jika tidak cocok, kembalikan apa adanya
+
+    const rawNumber = match[1].replace(/[^0-9]/g, "");
+    const suffix = match[2] || "";
+
+    const formattedNumber = rawNumber
+      ? Number(rawNumber).toLocaleString("id-ID")
+      : "";
+
+    return formattedNumber + suffix;
+  };
+
   const handleItemChange = (monIdx, itemIdx, field, value) => {
     const updated = [...monitoring];
-    updated[monIdx].items[itemIdx][field] =
-      field === "hasil" ? formatIDR(value.replace(/[^0-9]/g, "")) : value;
+
+    if (field === "hasil") {
+      updated[monIdx].items[itemIdx][field] = formatNumber(value);
+    } else {
+      updated[monIdx].items[itemIdx][field] = value;
+    }
+
     setMonitoring(updated);
   };
 
@@ -123,38 +148,35 @@ export default function FormModalMSE({ onClose }) {
           mon.defaultItems.length === 0
         )
           return false;
-        if (
-          mon.uraian !== "Hasil tindak lanjut dari monitoring sebelumnya" &&
-          (item.hasil === "" || parseIDR(item.hasil) < 0)
-        )
-          return false;
       }
     }
     return true;
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validate()) {
-      alert(
-        "Semua field wajib diisi dan hasil monitoring harus angka positif!"
-      );
-      return;
-    }
+
     const id = uuidv4();
 
     const monitoringData = monitoring.map((mon) => ({
       uraian: mon.uraian,
       items: mon.items.map((item) => ({
-        nama: item.nama,
-        hasil: parseIDR(item.hasil),
+        nama: item.nama && item.nama.trim() !== "" ? item.nama : "-",
+        hasil: item.hasil && item.hasil.trim() !== "" ? item.hasil : "-",
       })),
     }));
+
+    const metaData = Object.fromEntries(
+      Object.entries(meta).map(([k, v]) => [k, v.trim() !== "" ? v : "-"])
+    );
+
     await set(ref(db, `mse/${id}`), {
       id,
-      meta,
+      meta: metaData,
       monitoring: monitoringData,
       createdAt: Date.now(),
     });
+
     onClose();
   };
 
@@ -271,20 +293,41 @@ export default function FormModalMSE({ onClose }) {
                           disabled={mon.defaultItems.length > 0}
                         />
                       )}
-                      <input
-                        type="text"
-                        value={item.hasil}
-                        onChange={(e) =>
-                          handleItemChange(
-                            monIdx,
-                            itemIdx,
-                            "hasil",
-                            e.target.value
-                          )
-                        }
-                        className="border px-3 py-2 rounded w-full text-right"
-                        placeholder="Hasil Monitoring"
-                      />
+
+                      {[
+                        "Masalah yang dihadapi",
+                        "Hasil tindak lanjut dari monitoring sebelumnya",
+                      ].includes(mon.uraian) ? (
+                        <textarea
+                          value={item.hasil}
+                          onChange={(e) =>
+                            handleItemChange(
+                              monIdx,
+                              itemIdx,
+                              "hasil",
+                              e.target.value
+                            )
+                          }
+                          rows={3}
+                          className="border px-3 py-2 rounded w-full resize-y  text-justify"
+                          placeholder="Hasil Monitoring"
+                        />
+                      ) : (
+                        <input
+                          type="text"
+                          value={item.hasil}
+                          onChange={(e) =>
+                            handleItemChange(
+                              monIdx,
+                              itemIdx,
+                              "hasil",
+                              e.target.value
+                            )
+                          }
+                          className="border px-3 py-2 rounded w-full text-left"
+                          placeholder="Hasil Monitoring"
+                        />
+                      )}
                       {mon.allowAdd && mon.showItem && (
                         <button
                           type="button"
@@ -300,7 +343,7 @@ export default function FormModalMSE({ onClose }) {
                   {mon.allowAdd && mon.showItem && (
                     <button
                       type="button"
-                      className="bg-blue-100 text-blue-700 px-3 py-2 rounded text-xs mt-2 w-full md:w-auto"
+                      className=" px-3 py-2 rounded text-xs mt-2 w-full md:w-auto"
                       onClick={() => handleAddItem(monIdx)}
                     >
                       + Tambah Item

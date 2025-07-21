@@ -9,9 +9,8 @@ export default function DetailModalMSE({ data, onClose }) {
   const { meta, monitoring = [], comparison } = data;
 
   const formatHasil = (val) => {
-    if (val === undefined || val === null || val === "") return "-";
-    const num = parseFloat(val.toString().replace(/,/g, ""));
-    return isNaN(num) ? val : num.toLocaleString("id-ID");
+    if (!val || val === "-") return "-";
+    return val.toString();
   };
 
   const handleExportPDF = async () => {
@@ -89,9 +88,11 @@ export default function DetailModalMSE({ data, onClose }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-start pt-10 overflow-y-auto">
       <div className="bg-white p-6 rounded shadow w-full sm:max-w-md md:max-w-2xl lg:max-w-4xl space-y-4 mx-2">
-        <h2 className="text-2xl font-bold">Detail Monitoring MSE</h2>
+        <h2 className="text-2xl font-bold text-center">
+          Detail Monitoring MSE
+        </h2>
 
-        <div className="text-sm space-y-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           {[
             ["Nama", meta.nama],
             ["Usaha", meta.usaha],
@@ -102,9 +103,9 @@ export default function DetailModalMSE({ data, onClose }) {
             ["CDO", meta.cdo],
             ["Klasifikasi", meta.klasifikasi],
           ].map(([label, val]) => (
-            <p key={label}>
-              <b>{label}:</b> {val || "-"}
-            </p>
+            <div key={label} className="flex justify-between">
+              <b>{label}:</b> <span>{val || "-"}</span>
+            </div>
           ))}
         </div>
 
@@ -121,27 +122,37 @@ export default function DetailModalMSE({ data, onClose }) {
             <tbody>
               {monitoring.map((row, i) =>
                 row.uraian === "Omset / penjualan per bulan" ? (
-                  <tr key={i} className="border-t">
-                    <td className="p-2">{row.uraian}</td>
-                    <td className="p-2">-</td>
-                    <td className="p-2">
-                      {formatHasil(row.items?.[0]?.hasil)}
+                  <tr key={i} className="border-t border-b">
+                    <td className="p-2 border-r">{row.uraian}</td>
+                    <td className="p-2 border-r">Rp</td>
+                    <td className="p-2 border-r text-right">
+                      {formatHasil(row.items[0]?.hasil)}
                     </td>
                     {comparison && (
-                      <td className="p-2">
-                        {formatHasil(comparison[i]?.items?.[0]?.hasil)}
+                      <td className="p-2 text-right">
+                        {formatHasil(comparison[i]?.items[0]?.hasil)}
                       </td>
                     )}
                   </tr>
                 ) : (
-                  row.items.map((item, j) => (
-                    <tr key={`${i}-${j}`} className="border-t">
-                      <td className="p-2">{row.uraian}</td>
-                      <td className="p-2">{item.nama || "-"}</td>
-                      <td className="p-2">{formatHasil(item.hasil)}</td>
+                  row.items.map((item, idx) => (
+                    <tr key={`${i}-${idx}`} className="border-t border-b">
+                      {idx === 0 ? (
+                        <td
+                          className="p-2 border-r align-top"
+                          rowSpan={row.items.length}
+                          style={{ verticalAlign: "top" }}
+                        >
+                          {row.uraian}
+                        </td>
+                      ) : null}
+                      <td className="p-2 border-r">{item.nama || "-"}</td>
+                      <td className="p-2 border-r text-right">
+                        {formatHasil(item.hasil)}
+                      </td>
                       {comparison && (
-                        <td className="p-2">
-                          {formatHasil(comparison[i]?.items?.[j]?.hasil)}
+                        <td className="p-2 text-right">
+                          {formatHasil(comparison[i]?.items[idx]?.hasil)}
                         </td>
                       )}
                     </tr>
@@ -156,7 +167,7 @@ export default function DetailModalMSE({ data, onClose }) {
           <PDFDownloadLink
             document={<MSEDocument data={data} />}
             fileName={`Template_MSE_${meta.nama.replace(/\s+/g, "_")}.pdf`}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
           >
             📄 Ekspor PDF
           </PDFDownloadLink>

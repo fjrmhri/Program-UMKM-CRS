@@ -41,7 +41,7 @@ export default function DashboardMSE({
           </button>
           <button
             onClick={onAddUpload}
-            className="bg-yellow-500 text-white px-2 py-1 sm:px-3 sm:py-1.5 md:px-4 md:py-2 rounded text-xs sm:text-sm md:text-base hover:bg-yellow-600 transition"
+            className="bg-green-600 text-white px-2 py-1 sm:px-3 sm:py-1.5 md:px-4 md:py-2 rounded text-xs sm:text-sm md:text-base hover:bg-green-700 transition"
           >
             + Upload Excel
           </button>
@@ -90,7 +90,13 @@ export default function DashboardMSE({
                         }`}
                         style={{ marginLeft: "2px" }}
                       >
-                        {d.comparison ? "Edit Perbandingan" : "Bandingkan"}
+                        {d.comparison ? "Edit Perbandingan" : "Banding"}
+                      </button>
+                      <button
+                        onClick={() => onEdit(d)}
+                        className="bg-green-50 text-green-600 px-2 py-1 rounded text-xs hover:bg-green-100 transition"
+                      >
+                        Edit
                       </button>
                     </div>
                   </td>

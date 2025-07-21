@@ -146,7 +146,7 @@ export default function DetailModal({ data, onClose }) {
         <div className="flex flex-col sm:flex-row justify-between items-center pt-4 gap-2 sm:gap-0">
           <button
             onClick={handleExport}
-            className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 w-full sm:w-auto"
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full sm:w-auto"
           >
             Ekspor Excel
           </button>

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { db } from "../../firebase";
 import { ref, onValue, remove } from "firebase/database";
 
-export default function Dashboard({ onAdd, onView }) {
+export default function Dashboard({ onAdd, onView, onEdit }) {
   const [datasets, setDatasets] = useState([]);
 
   useEffect(() => {
@@ -42,43 +42,49 @@ export default function Dashboard({ onAdd, onView }) {
           <table className="min-w-[340px] sm:min-w-[600px] w-full text-xs sm:text-sm border rounded">
             <thead className="bg-gray-100">
               <tr>
-                <th className="px-2 py-2 sm:px-3 text-left">Judul</th>
-                {}
-                <th className="px-2 py-2 sm:px-3 text-left hidden md:table-cell">
+                <th className="px-2 py-2 text-left">Judul</th>
+                <th className="px-2 py-2 text-left hidden md:table-cell">
                   Pre
                 </th>
-                <th className="px-2 py-2 sm:px-3 text-left hidden md:table-cell">
+                <th className="px-2 py-2 text-left hidden md:table-cell">
                   Post
                 </th>
-                <th className="px-2 py-2 sm:px-3 text-left">Peserta</th>
-                <th className="px-2 py-2 sm:px-3 text-left">Aksi</th>
+                <th className="px-2 py-2 text-left">Peserta</th>
+                <th className="px-2 py-2 text-left">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {datasets.map((d) => (
                 <tr key={d.id} className="border-t">
-                  <td className="px-2 py-2 sm:px-3">{d.title}</td>
-                  {}
-                  <td className="px-2 py-2 sm:px-3 hidden md:table-cell">
+                  <td className="px-2 py-2">{d.title}</td>
+                  <td className="px-2 py-2 hidden md:table-cell">
                     {new Date(d.preDate).toLocaleDateString("id-ID")}
                   </td>
-                  <td className="px-2 py-2 sm:px-3 hidden md:table-cell">
+                  <td className="px-2 py-2 hidden md:table-cell">
                     {new Date(d.postDate).toLocaleDateString("id-ID")}
                   </td>
-                  <td className="px-2 py-2 sm:px-3">{d.raw?.length || 0}</td>
-                  <td className="px-2 py-2 sm:px-3 space-x-1 sm:space-x-2">
-                    <button
-                      onClick={() => onView(d)}
-                      className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs hover:bg-blue-100 transition"
-                    >
-                      Detail
-                    </button>
-                    <button
-                      onClick={() => handleDelete(d.id)}
-                      className="bg-red-50 text-red-600 px-2 py-1 rounded text-xs hover:bg-red-100 transition"
-                    >
-                      Hapus
-                    </button>
+                  <td className="px-2 py-2">{d.raw?.length || 0}</td>
+                  <td className="px-2 py-2">
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => onView(d)}
+                        className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs hover:bg-blue-100 transition"
+                      >
+                        Detail
+                      </button>
+                      <button
+                        onClick={() => handleDelete(d.id)}
+                        className="bg-red-50 text-red-600 px-2 py-1 rounded text-xs hover:bg-red-100 transition"
+                      >
+                        Hapus
+                      </button>
+                      <button
+                        onClick={() => onEdit(d)}
+                        className="bg-yellow-500 text-white hover:bg-yellow-600 px-2 py-1 rounded text-xs font-semibold transition"
+                      >
+                        Edit
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

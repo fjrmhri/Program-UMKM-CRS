@@ -46,14 +46,12 @@ export default function UploadModal({ onClose, onSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start pt-10 overflow-y-auto z-50">
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-3 sm:p-6 rounded shadow-lg w-full max-w-xs sm:max-w-lg space-y-3 sm:space-y-4"
+        className="bg-white p-6 rounded shadow-lg w-full max-w-5xl max-h-[90vh] overflow-y-auto space-y-6"
       >
-        <h2 className="text-lg sm:text-xl font-bold">
-          Tambah Data Pre-Post Test
-        </h2>
+        <h2 className="text-xl font-bold mb-2">Tambah Data Pre-Post Test</h2>
 
         <div>
           <label className="block mb-1 font-medium">Nama Data</label>
@@ -61,19 +59,19 @@ export default function UploadModal({ onClose, onSuccess }) {
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full border px-3 py-2 rounded"
+            className="border px-3 py-2 rounded w-full"
             required
           />
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+        <div className="flex flex-col md:flex-row gap-2 md:gap-4">
           <div className="flex-1">
             <label className="block mb-1 font-medium">Tanggal Pre Test</label>
             <input
               type="date"
               value={preDate}
               onChange={(e) => setPreDate(e.target.value)}
-              className="w-full border px-3 py-2 rounded"
+              className="border px-3 py-2 rounded w-full"
               required
             />
           </div>
@@ -83,7 +81,7 @@ export default function UploadModal({ onClose, onSuccess }) {
               type="date"
               value={postDate}
               onChange={(e) => setPostDate(e.target.value)}
-              className="w-full border px-3 py-2 rounded"
+              className="border px-3 py-2 rounded w-full"
               required
             />
           </div>
@@ -95,23 +93,23 @@ export default function UploadModal({ onClose, onSuccess }) {
             type="file"
             accept=".xlsx,.xls,.csv"
             onChange={(e) => setFile(e.target.files[0])}
-            className="w-full"
+            className="border px-3 py-2 rounded w-full"
             required
           />
         </div>
 
-        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center pt-2 gap-2">
+        <div className="flex flex-col md:flex-row gap-3 pt-2">
           <button
             type="submit"
             disabled={loading}
-            className="bg-green-500 text-white px-3 py-2 rounded text-sm sm:text-base hover:bg-green-600 w-full sm:w-auto"
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blur-700 w-full md:w-auto"
           >
             {loading ? <Spinner /> : "Submit"}
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="text-gray-600 hover:underline w-full sm:w-auto"
+            className="text-gray-600 hover:underline w-full md:w-auto"
           >
             Batal
           </button>
