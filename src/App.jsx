@@ -12,8 +12,6 @@ export default function App() {
   const [activeMenu, setActiveMenu] = useState("analytics");
   const [showUpload, setShowUpload] = useState(false);
   const [selected, setSelected] = useState(null);
-
-  // MSE states
   const [showUploadMSE, setShowUploadMSE] = useState(false);
   const [showFormMSE, setShowFormMSE] = useState(false);
   const [selectedMSE, setSelectedMSE] = useState(null);
@@ -21,85 +19,94 @@ export default function App() {
   const [compareDataMSE, setCompareDataMSE] = useState(null);
 
   return (
-    <div className="min-h-screen bg-gray-50 text-base">
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-blue-50 text-sm sm:text-base">
       {}
-      <header className="py-3 md:py-6 bg-white shadow">
-        <h1 className="text-base sm:text-lg md:text-2xl lg:text-3xl font-bold text-center leading-tight">
-          Program Corporate Social Responsibility
-        </h1>
-        <h5 className="text-xs sm:text-base md:text-lg lg:text-xl text-center font-medium">
-          estate cerenti
-        </h5>
+      <header className="bg-white rounded-lg shadow-sm max-w-xl mx-auto mt-4 px-3 py-2 flex justify-around text-sm sm:text-base">
+        <div className="text-center">
+          <h1 className="text-xl sm:text-3xl font-bold tracking-wide">
+            Program Corporate Social Responsibility
+          </h1>
+          <p className="text-sm sm:text-lg mt-1 text-white/90"></p>
+        </div>
       </header>
 
-      {}
-      <nav className="bg-white shadow mb-2 sm:mb-3 md:mb-6">
-        <ul className="flex flex-wrap justify-center gap-1 sm:gap-4 py-1 sm:py-2 text-xs sm:text-sm md:text-base">
-          <li
-            className={`px-2 sm:px-4 py-1 sm:py-2 cursor-pointer rounded transition-all ${
-              activeMenu === "analytics"
-                ? "border-b-2 sm:border-b-4 border-blue-500 font-semibold text-blue-600 bg-blue-50"
-                : "text-gray-600 hover:text-gray-800"
-            }`}
-            onClick={() => setActiveMenu("analytics")}
-          >
-            Analisis Pre‑Post Test
-          </li>
-          <li
-            className={`px-2 sm:px-4 py-1 sm:py-2 cursor-pointer rounded transition-all ${
-              activeMenu === "mse"
-                ? "border-b-2 sm:border-b-4 border-green-500 font-semibold text-green-600 bg-green-50"
-                : "text-gray-600 hover:text-gray-800"
-            }`}
-            onClick={() => setActiveMenu("mse")}
-          >
-            MSE Offline
-          </li>
-        </ul>
+      {/* NAVIGATION TABS */}
+      <nav className="bg-white rounded-lg shadow-sm max-w-xl mx-auto mt-4 px-3 py-2 flex justify-around text-sm sm:text-base">
+        <button
+          onClick={() => setActiveMenu("analytics")}
+          className={`w-1/2 text-center py-2 rounded-md transition-all ${
+            activeMenu === "analytics"
+              ? "bg-blue-100 text-blue-600 font-semibold shadow"
+              : "text-gray-600 hover:bg-gray-100"
+          }`}
+        >
+          Pre‑Post Test
+        </button>
+        <button
+          onClick={() => setActiveMenu("mse")}
+          className={`w-1/2 text-center py-2 rounded-md transition-all ${
+            activeMenu === "mse"
+              ? "bg-green-100 text-green-600 font-semibold shadow"
+              : "text-gray-600 hover:bg-gray-100"
+          }`}
+        >
+          MSE Offline
+        </button>
       </nav>
 
-      <main className="mx-auto px-1 sm:px-2 md:px-4 max-w-full sm:max-w-2xl md:max-w-4xl lg:max-w-5xl">
-        {}
-        {activeMenu === "analytics" && (
-          <>
-            <Dashboard onAdd={() => setShowUpload(true)} onView={setSelected} />
-            {showUpload && <UploadModal onClose={() => setShowUpload(false)} />}
-            {selected && (
-              <DetailModal data={selected} onClose={() => setSelected(null)} />
-            )}
-          </>
-        )}
-        {activeMenu === "mse" && (
-          <>
-            <DashboardMSE
-              onAddForm={() => setShowFormMSE(true)}
-              onAddUpload={() => setShowUploadMSE(true)}
-              onView={setSelectedMSE}
-              onCompare={(d) => {
-                setCompareDataMSE(d);
-                setShowCompareMSE(true);
-              }}
-            />
-            {showFormMSE && (
-              <FormModalMSE onClose={() => setShowFormMSE(false)} />
-            )}
-            {showUploadMSE && (
-              <UploadModalMSE onClose={() => setShowUploadMSE(false)} />
-            )}
-            {selectedMSE && (
-              <DetailModalMSE
-                data={selectedMSE}
-                onClose={() => setSelectedMSE(null)}
+      {/* MAIN CONTENT */}
+      <main className="max-w-full sm:max-w-3xl md:max-w-5xl mx-auto mt-2 px-1 pb-10">
+        <div className="bg-white rounded-xl shadow p-2 sm:p-6 transition-all duration-300">
+          {activeMenu === "analytics" && (
+            <>
+              <Dashboard
+                onAdd={() => setShowUpload(true)}
+                onView={setSelected}
               />
-            )}
-            {showCompareMSE && (
-              <FormModalComparisonMSE
-                data={compareDataMSE}
-                onClose={() => setShowCompareMSE(false)}
+              {showUpload && (
+                <UploadModal onClose={() => setShowUpload(false)} />
+              )}
+              {selected && (
+                <DetailModal
+                  data={selected}
+                  onClose={() => setSelected(null)}
+                />
+              )}
+            </>
+          )}
+
+          {activeMenu === "mse" && (
+            <>
+              <DashboardMSE
+                onAddForm={() => setShowFormMSE(true)}
+                onAddUpload={() => setShowUploadMSE(true)}
+                onView={setSelectedMSE}
+                onCompare={(d) => {
+                  setCompareDataMSE(d);
+                  setShowCompareMSE(true);
+                }}
               />
-            )}
-          </>
-        )}
+              {showFormMSE && (
+                <FormModalMSE onClose={() => setShowFormMSE(false)} />
+              )}
+              {showUploadMSE && (
+                <UploadModalMSE onClose={() => setShowUploadMSE(false)} />
+              )}
+              {selectedMSE && (
+                <DetailModalMSE
+                  data={selectedMSE}
+                  onClose={() => setSelectedMSE(null)}
+                />
+              )}
+              {showCompareMSE && (
+                <FormModalComparisonMSE
+                  data={compareDataMSE}
+                  onClose={() => setShowCompareMSE(false)}
+                />
+              )}
+            </>
+          )}
+        </div>
       </main>
     </div>
   );

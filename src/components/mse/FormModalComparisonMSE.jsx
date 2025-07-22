@@ -3,6 +3,7 @@ import { db } from "../../firebase";
 import { ref, update } from "firebase/database";
 
 export default function FormModalComparisonMSE({ data, onClose }) {
+  const [tanggal, setTanggal] = useState("");
   const [monitoring, setMonitoring] = useState(
     data.monitoring.map((mon) => ({
       uraian: mon.uraian,
@@ -33,7 +34,10 @@ export default function FormModalComparisonMSE({ data, onClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await update(ref(db, `mse/${data.id}`), { comparison: monitoring });
+    await update(ref(db, `mse/${data.id}`), {
+      comparison: monitoring,
+      comparisonDate: tanggal,
+    });
     onClose();
   };
 
@@ -44,15 +48,37 @@ export default function FormModalComparisonMSE({ data, onClose }) {
           <h2 className="text-xl font-bold mb-2">
             Input Data Perbandingan Monitoring MSE
           </h2>
-          <div className="mt-4 space-y-6">
+
+          {/* Tanggal Monitoring */}
+          <div className="flex flex-col">
+            <label className="text-sm font-medium text-gray-700 mb-1">
+              Tanggal Perbandingan Monitoring
+            </label>
+            <input
+              type="date"
+              value={tanggal}
+              onChange={(e) => setTanggal(e.target.value)}
+              className="border px-3 py-2 rounded w-full focus:outline-none focus:ring-1 focus:ring-yellow-400"
+              required
+            />
+          </div>
+
+          {/* Monitoring Section */}
+          <div className="space-y-6">
             {monitoring.map((mon, monIdx) => (
-              <div key={monIdx} className="bg-gray-50 p-4 rounded shadow">
-                <h3 className="font-semibold mb-3">{mon.uraian}</h3>
-                <div className="space-y-3">
+              <div
+                key={monIdx}
+                className="bg-gray-50 border rounded-lg p-4 shadow-sm"
+              >
+                <h3 className="font-semibold text-gray-800 mb-4">
+                  {mon.uraian}
+                </h3>
+
+                <div className="space-y-4">
                   {mon.items.map((item, itemIdx) => (
                     <div
                       key={itemIdx}
-                      className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center"
+                      className="grid gap-4 items-center grid-cols-1 md:grid-cols-3"
                     >
                       <input
                         type="text"
@@ -62,21 +88,23 @@ export default function FormModalComparisonMSE({ data, onClose }) {
                           updated[monIdx].items[itemIdx].nama = e.target.value;
                           setMonitoring(updated);
                         }}
-                        className="border px-3 py-2 rounded w-full"
-                        placeholder="Item"
+                        className="border px-3 py-2 rounded w-full focus:outline-none focus:ring-1 focus:ring-yellow-400"
+                        placeholder="Nama Item"
                       />
+
                       <input
                         type="text"
                         value={item.hasil}
                         onChange={(e) =>
                           handleItemChange(monIdx, itemIdx, e.target.value)
                         }
-                        className="border px-3 py-2 rounded w-full text-right"
+                        className="border px-3 py-2 rounded w-full text-left focus:outline-none focus:ring-1 focus:ring-yellow-400"
                         placeholder="Hasil Perbandingan"
                       />
+
                       <button
                         type="button"
-                        className="bg-green-100 text-green-700 px-3 py-2 rounded text-xs w-full md:w-auto"
+                        className="bg-red-100 text-red-700 px-3 py-2 rounded text-xs hover:bg-red-200 transition w-full md:w-auto"
                         onClick={() => handleRemoveItem(monIdx, itemIdx)}
                         disabled={mon.items.length === 1}
                       >
@@ -84,9 +112,10 @@ export default function FormModalComparisonMSE({ data, onClose }) {
                       </button>
                     </div>
                   ))}
+
                   <button
                     type="button"
-                    className="bg-blue-100 text-blue-700 px-3 py-2 rounded text-xs mt-2 w-full md:w-auto"
+                    className="bg-yellow-100 text-yellow-700 px-4 py-2 rounded text-sm mt-2 hover:bg-yellow-200 transition"
                     onClick={() => handleAddItem(monIdx)}
                   >
                     + Tambah Item
@@ -95,10 +124,11 @@ export default function FormModalComparisonMSE({ data, onClose }) {
               </div>
             ))}
           </div>
-          <div className="flex flex-col md:flex-row gap-3 pt-2">
+
+          <div className="flex flex-col md:flex-row justify-end gap-3 pt-4">
             <button
               type="submit"
-              className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 w-full md:w-auto"
+              className="bg-yellow-500 text-white px-6 py-2 rounded hover:bg-yellow-600 transition w-full md:w-auto"
             >
               Simpan Perbandingan
             </button>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { db } from "../../firebase";
 import { ref, set } from "firebase/database";
 import { v4 as uuidv4 } from "uuid";
@@ -65,20 +65,19 @@ const monitoringTemplate = [
     uraian: "Hasil tindak lanjut dari monitoring sebelumnya",
     items: [
       {
-        nama: "Hasil rencana tindak lanjut dari permasalahan di monitoring sebelumnya",
+        nama: "Hasil rencana tindak lanjut masalah",
         hasil: "",
       },
     ],
     allowAdd: true,
-    defaultItems: [
-      "Hasil rencana tindak lanjut dari permasalahan di monitoring sebelumnya",
-    ],
+    defaultItems: ["Hasil rencana tindak lanjut masalah "],
     showItem: true,
   },
 ];
 
-export default function FormModalMSE({ onClose }) {
+export default function FormModalMSE({ onClose, existingData }) {
   const [meta, setMeta] = useState({
+    tanggal: "",
     nama: "",
     usaha: "",
     hp: "",
@@ -90,37 +89,32 @@ export default function FormModalMSE({ onClose }) {
   });
   const [monitoring, setMonitoring] = useState(monitoringTemplate);
 
+  useEffect(() => {
+    if (isEditMode) {
+      setMeta(existingData.meta || {});
+      setMonitoring(existingData.monitoring || monitoringTemplate);
+    }
+  }, [existingData]);
+
   const handleMetaChange = (e) => {
     setMeta({ ...meta, [e.target.name]: e.target.value });
   };
 
   const formatNumber = (value) => {
-    if (!value) return "";
-
-    // Pisahkan angka di awal dari sisanya
-    const match = value.match(/^([\d,.]+)(.*)$/); // Ambil angka + sisa teks
-
-    if (!match) return value; // Jika tidak cocok, kembalikan apa adanya
-
+    const match = value.match(/^([\d,.]+)(.*)$/);
+    if (!match) return value;
     const rawNumber = match[1].replace(/[^0-9]/g, "");
     const suffix = match[2] || "";
-
     const formattedNumber = rawNumber
       ? Number(rawNumber).toLocaleString("id-ID")
       : "";
-
     return formattedNumber + suffix;
   };
 
   const handleItemChange = (monIdx, itemIdx, field, value) => {
     const updated = [...monitoring];
-
-    if (field === "hasil") {
-      updated[monIdx].items[itemIdx][field] = formatNumber(value);
-    } else {
-      updated[monIdx].items[itemIdx][field] = value;
-    }
-
+    updated[monIdx].items[itemIdx][field] =
+      field === "hasil" ? formatNumber(value) : value;
     setMonitoring(updated);
   };
 
@@ -130,39 +124,22 @@ export default function FormModalMSE({ onClose }) {
     setMonitoring(updated);
   };
 
+  const isEditMode = !!existingData;
+
   const handleRemoveItem = (monIdx, itemIdx) => {
     const updated = [...monitoring];
     updated[monIdx].items.splice(itemIdx, 1);
     setMonitoring(updated);
   };
 
-  const validate = () => {
-    for (const key in meta) {
-      if (!meta[key]) return false;
-    }
-    for (const mon of monitoring) {
-      for (const item of mon.items) {
-        if (
-          mon.uraian !== "Hasil tindak lanjut dari monitoring sebelumnya" &&
-          !item.nama &&
-          mon.defaultItems.length === 0
-        )
-          return false;
-      }
-    }
-    return true;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const id = uuidv4();
-
     const monitoringData = monitoring.map((mon) => ({
       uraian: mon.uraian,
       items: mon.items.map((item) => ({
-        nama: item.nama && item.nama.trim() !== "" ? item.nama : "-",
-        hasil: item.hasil && item.hasil.trim() !== "" ? item.hasil : "-",
+        nama: item.nama?.trim() || "-",
+        hasil: item.hasil?.trim() || "-",
       })),
     }));
 
@@ -170,12 +147,15 @@ export default function FormModalMSE({ onClose }) {
       Object.entries(meta).map(([k, v]) => [k, v.trim() !== "" ? v : "-"])
     );
 
-    await set(ref(db, `mse/${id}`), {
+    const payload = {
       id,
       meta: metaData,
       monitoring: monitoringData,
-      createdAt: Date.now(),
-    });
+      ...(isEditMode ? {} : { createdAt: Date.now() }),
+    };
+
+    const targetRef = ref(db, `mse/${id}`);
+    await (isEditMode ? update(targetRef, payload) : set(targetRef, payload));
 
     onClose();
   };
@@ -184,89 +164,81 @@ export default function FormModalMSE({ onClose }) {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start pt-10 overflow-y-auto z-50">
       <div className="bg-white p-6 rounded shadow-lg w-full max-w-5xl max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit} className="space-y-6">
-          <h2 className="text-xl font-bold mb-2">Input Data Monitoring MSE</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
-              name="nama"
-              value={meta.nama}
-              onChange={handleMetaChange}
-              className="border px-3 py-2 rounded w-full"
-              placeholder="Nama pelaku/pemilik/lembaga UMKM"
-              required
-            />
-            <input
-              name="usaha"
-              value={meta.usaha}
-              onChange={handleMetaChange}
-              className="border px-3 py-2 rounded w-full"
-              placeholder="Nama usaha / merk produk"
-              required
-            />
-            <input
-              name="hp"
-              value={meta.hp}
-              onChange={handleMetaChange}
-              className="border px-3 py-2 rounded w-full"
-              placeholder="Nomor HP / WA mitra"
-              required
-            />
-            <input
-              name="desa"
-              value={meta.desa}
-              onChange={handleMetaChange}
-              className="border px-3 py-2 rounded w-full"
-              placeholder="Desa"
-              required
-            />
-            <input
-              name="kota"
-              value={meta.kota}
-              onChange={handleMetaChange}
-              className="border px-3 py-2 rounded w-full"
-              placeholder="Kota / Kabupaten"
-              required
-            />
-            <input
-              name="estate"
-              value={meta.estate}
-              onChange={handleMetaChange}
-              className="border px-3 py-2 rounded w-full"
-              placeholder="Estate"
-              required
-            />
-            <input
-              name="cdo"
-              value={meta.cdo}
-              onChange={handleMetaChange}
-              className="border px-3 py-2 rounded w-full"
-              placeholder="Nama CDO"
-              required
-            />
-            <select
-              name="klasifikasi"
-              value={meta.klasifikasi}
-              onChange={handleMetaChange}
-              className="border px-3 py-2 rounded w-full"
-              required
-            >
-              <option value="">Klasifikasi Mitra</option>
-              <option value="Pemula">Pemula</option>
-              <option value="Berkembang">Berkembang</option>
-              <option value="Maju">Maju</option>
-            </select>
+          <h2 className="text-xl font-bold">
+            {isEditMode ? "Edit Monitoring MSE" : "Input Monitoring MSE"}
+          </h2>
+
+          {/* Informasi UMKM */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {[
+              ["nama", "Nama pelaku/lembaga UMKM"],
+              ["usaha", "Nama usaha / merk produk"],
+              ["hp", "No. HP / WA Mitra"],
+              ["desa", "Desa"],
+              ["kota", "Kota/Kabupaten"],
+              ["estate", "Estate"],
+              ["cdo", "Nama CDO"],
+            ].map(([key, label]) => (
+              <div key={key} className="flex flex-col">
+                <label className="text-sm font-medium text-gray-700 mb-1">
+                  {label}
+                </label>
+                <input
+                  name={key}
+                  value={meta[key]}
+                  onChange={handleMetaChange}
+                  className="border px-3 py-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-green-300"
+                  required
+                />
+              </div>
+            ))}
+            <div className="flex flex-col">
+              <label className="text-sm font-medium text-gray-700 mb-1">
+                Tanggal Monitoring
+              </label>
+              <input
+                type="date"
+                name="tanggal"
+                value={meta.tanggal}
+                onChange={handleMetaChange}
+                className="border px-3 py-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-green-300"
+                required
+              />
+              <label className="text-sm font-medium text-gray-700 mb-1">
+                Klasifikasi Mitra
+              </label>
+              <select
+                name="klasifikasi"
+                value={meta.klasifikasi}
+                onChange={handleMetaChange}
+                className="border px-3 py-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-green-300"
+                required
+              >
+                <option value="">Pilih klasifikasi</option>
+                <option value="Pemula">Tumbuh</option>
+                <option value="Berkembang">Berkembang</option>
+                <option value="Maju">Mandiri</option>
+              </select>
+            </div>
           </div>
-          <div className="mt-4 space-y-6">
+
+          {/* Monitoring */}
+          <div className="space-y-6">
             {monitoring.map((mon, monIdx) => (
-              <div key={monIdx} className="bg-gray-50 p-4 rounded shadow">
-                <h3 className="font-semibold mb-3">{mon.uraian}</h3>
-                <div className="space-y-3">
+              <div
+                key={monIdx}
+                className="bg-gray-50 border rounded-lg p-4 shadow-sm"
+              >
+                <h3 className="font-semibold text-gray-800 mb-4">
+                  {mon.uraian}
+                </h3>
+
+                <div className="space-y-4">
                   {mon.items.map((item, itemIdx) => (
                     <div
                       key={itemIdx}
-                      className={`grid gap-3 items-center ${
-                        mon.showItem
-                          ? "grid-cols-1 md:grid-cols-3"
-                          : "grid-cols-1"
+                      className={`grid gap-4 items-center ${
+                        mon.showItem ? "grid-cols-1 md:grid-cols-3" : ""
                       }`}
                     >
                       {mon.showItem && (
@@ -281,12 +253,8 @@ export default function FormModalMSE({ onClose }) {
                               e.target.value
                             )
                           }
-                          className="border px-3 py-2 rounded w-full"
-                          placeholder={
-                            mon.defaultItems.length > 0
-                              ? mon.defaultItems[itemIdx] || "Item"
-                              : "Item"
-                          }
+                          className="border px-3 py-2 rounded w-full focus:outline-none focus:ring-1 focus:ring-green-300"
+                          placeholder="Nama Item"
                           required={
                             mon.defaultItems.length === 0 && mon.showItem
                           }
@@ -309,8 +277,8 @@ export default function FormModalMSE({ onClose }) {
                             )
                           }
                           rows={3}
-                          className="border px-3 py-2 rounded w-full resize-y  text-justify"
-                          placeholder="Hasil Monitoring"
+                          className="border px-3 py-2 rounded w-full resize-y focus:outline-none focus:ring-1 focus:ring-green-300"
+                          placeholder="Penjelasan hasil"
                         />
                       ) : (
                         <input
@@ -324,14 +292,15 @@ export default function FormModalMSE({ onClose }) {
                               e.target.value
                             )
                           }
-                          className="border px-3 py-2 rounded w-full text-left"
-                          placeholder="Hasil Monitoring"
+                          className="border px-3 py-2 rounded w-full focus:outline-none focus:ring-1 focus:ring-green-300"
+                          placeholder="Nilai hasil"
                         />
                       )}
+
                       {mon.allowAdd && mon.showItem && (
                         <button
                           type="button"
-                          className="bg-green-100 text-green-700 px-3 py-2 rounded text-xs w-full md:w-auto"
+                          className="bg-red-100 text-red-700 px-3 py-2 rounded text-xs hover:bg-red-200 transition"
                           onClick={() => handleRemoveItem(monIdx, itemIdx)}
                           disabled={mon.items.length === 1}
                         >
@@ -340,10 +309,11 @@ export default function FormModalMSE({ onClose }) {
                       )}
                     </div>
                   ))}
+
                   {mon.allowAdd && mon.showItem && (
                     <button
                       type="button"
-                      className=" px-3 py-2 rounded text-xs mt-2 w-full md:w-auto"
+                      className="bg-green-100 text-green-700 px-4 py-2 rounded text-sm mt-2 hover:bg-green-200 transition"
                       onClick={() => handleAddItem(monIdx)}
                     >
                       + Tambah Item
@@ -353,17 +323,19 @@ export default function FormModalMSE({ onClose }) {
               </div>
             ))}
           </div>
-          <div className="flex flex-col md:flex-row gap-3 pt-2">
+
+          {/* Aksi */}
+          <div className="flex flex-col md:flex-row justify-end gap-3 pt-4">
             <button
               type="submit"
-              className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 w-full md:w-auto"
+              className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition"
             >
-              Simpan
+              {isEditMode ? "Perbarui Data" : "Simpan"}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="text-gray-600 hover:underline w-full md:w-auto"
+              className="text-gray-600 hover:underline"
             >
               Batal
             </button>

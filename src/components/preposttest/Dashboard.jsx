@@ -29,7 +29,7 @@ export default function Dashboard({ onAdd, onView, onEdit }) {
         </h2>
         <button
           onClick={onAdd}
-          className="bg-blue-600 text-white px-2 py-1 sm:px-3 sm:py-1.5 md:px-4 md:py-2 rounded text-xs sm:text-sm md:text-base hover:bg-blue-700 transition"
+          className="bg-blue-600 text-white px-2 py-2 sm:px-3 sm:py-1.5 md:px-4 md:py-2 rounded text-xs sm:text-sm md:text-base hover:bg-blue-700 transition"
         >
           + Tambah Data
         </button>
@@ -39,7 +39,7 @@ export default function Dashboard({ onAdd, onView, onEdit }) {
         <p className="text-gray-500 text-xs sm:text-sm">Belum ada data.</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="min-w-[340px] sm:min-w-[600px] w-full text-xs sm:text-sm border rounded">
+          <table className="min-w-[300px] sm:min-w-[600px] w-full text-xs sm:text-sm border rounded">
             <thead className="bg-gray-100">
               <tr>
                 <th className="px-2 py-2 text-left">Judul</th>
@@ -73,16 +73,16 @@ export default function Dashboard({ onAdd, onView, onEdit }) {
                         Detail
                       </button>
                       <button
+                        onClick={() => onEdit(d)}
+                        className="bg-yellow-500 text-white hover:bg-yellow-600 px-4 py-1 rounded text-xs font-semibold transition"
+                      >
+                        Edit
+                      </button>
+                      <button
                         onClick={() => handleDelete(d.id)}
                         className="bg-red-50 text-red-600 px-2 py-1 rounded text-xs hover:bg-red-100 transition"
                       >
                         Hapus
-                      </button>
-                      <button
-                        onClick={() => onEdit(d)}
-                        className="bg-yellow-500 text-white hover:bg-yellow-600 px-2 py-1 rounded text-xs font-semibold transition"
-                      >
-                        Edit
                       </button>
                     </div>
                   </td>
