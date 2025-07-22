@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../../firebase";
-import { ref, set } from "firebase/database";
+import { ref, set, update } from "firebase/database";
 import { v4 as uuidv4 } from "uuid";
 
 const monitoringTemplate = [
@@ -88,9 +88,10 @@ export default function FormModalMSE({ onClose, existingData }) {
     klasifikasi: "",
   });
   const [monitoring, setMonitoring] = useState(monitoringTemplate);
+  const isEditMode = !!existingData;
 
   useEffect(() => {
-    if (isEditMode) {
+    if (existingData) {
       setMeta(existingData.meta || {});
       setMonitoring(existingData.monitoring || monitoringTemplate);
     }
@@ -124,8 +125,6 @@ export default function FormModalMSE({ onClose, existingData }) {
     setMonitoring(updated);
   };
 
-  const isEditMode = !!existingData;
-
   const handleRemoveItem = (monIdx, itemIdx) => {
     const updated = [...monitoring];
     updated[monIdx].items.splice(itemIdx, 1);
@@ -134,7 +133,8 @@ export default function FormModalMSE({ onClose, existingData }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const id = uuidv4();
+    const id = isEditMode ? existingData.id : uuidv4();
+
     const monitoringData = monitoring.map((mon) => ({
       uraian: mon.uraian,
       items: mon.items.map((item) => ({
@@ -156,7 +156,6 @@ export default function FormModalMSE({ onClose, existingData }) {
 
     const targetRef = ref(db, `mse/${id}`);
     await (isEditMode ? update(targetRef, payload) : set(targetRef, payload));
-
     onClose();
   };
 
@@ -199,7 +198,7 @@ export default function FormModalMSE({ onClose, existingData }) {
               <input
                 type="date"
                 name="tanggal"
-                value={meta.tanggal}
+                value={meta.tanggal || ""}
                 onChange={handleMetaChange}
                 className="border px-3 py-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-green-300"
                 required
@@ -209,7 +208,7 @@ export default function FormModalMSE({ onClose, existingData }) {
               </label>
               <select
                 name="klasifikasi"
-                value={meta.klasifikasi}
+                value={meta.klasifikasi || ""}
                 onChange={handleMetaChange}
                 className="border px-3 py-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-green-300"
                 required
@@ -232,7 +231,6 @@ export default function FormModalMSE({ onClose, existingData }) {
                 <h3 className="font-semibold text-gray-800 mb-4">
                   {mon.uraian}
                 </h3>
-
                 <div className="space-y-4">
                   {mon.items.map((item, itemIdx) => (
                     <div
@@ -244,7 +242,7 @@ export default function FormModalMSE({ onClose, existingData }) {
                       {mon.showItem && (
                         <input
                           type="text"
-                          value={item.nama ?? ""}
+                          value={item.nama || ""}
                           onChange={(e) =>
                             handleItemChange(
                               monIdx,
@@ -267,7 +265,7 @@ export default function FormModalMSE({ onClose, existingData }) {
                         "Hasil tindak lanjut dari monitoring sebelumnya",
                       ].includes(mon.uraian) ? (
                         <textarea
-                          value={item.hasil}
+                          value={item.hasil || ""}
                           onChange={(e) =>
                             handleItemChange(
                               monIdx,
@@ -283,7 +281,7 @@ export default function FormModalMSE({ onClose, existingData }) {
                       ) : (
                         <input
                           type="text"
-                          value={item.hasil}
+                          value={item.hasil || ""}
                           onChange={(e) =>
                             handleItemChange(
                               monIdx,
