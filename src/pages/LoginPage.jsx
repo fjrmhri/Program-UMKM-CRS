@@ -1,6 +1,7 @@
 import React from "react";
 import LoginForm from "../components/Auth/LoginForm";
 import logo from "../assets/logo.PNG";
+import { Link } from "react-router-dom";
 
 export default function LoginPage() {
   return (
@@ -21,12 +22,12 @@ export default function LoginPage() {
         {}
         <p className="text-center text-sm text-gray-600 mt-6">
           Belum punya akun?{" "}
-          <a
-            href="/signup"
+          <Link
+            to="/signup"
             className="text-green-600 hover:underline font-medium"
           >
             Daftar di sini
-          </a>
+          </Link>
         </p>
       </div>
     </div>
