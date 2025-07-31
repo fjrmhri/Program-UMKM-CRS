@@ -69,7 +69,7 @@ export default function DashboardBook({ onAddForm }) {
               Pembukuan UMKM
             </h2>
             <p className="text-gray-600 text-sm justify-center text-center mt-1">
-              Program Corporate Social Responsibility - Pestate cerenti
+              Program Corporate Social Responsibility - estate cerenti
             </p>
           </div>
 
