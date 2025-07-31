@@ -55,6 +55,7 @@ export default function SignUpForm() {
 
       navigate("/dashboard");
     } catch (err) {
+      console.error("Sign up error:", err);
       let errorMessage = "Registrasi gagal. Silakan coba lagi.";
       if (err.code === "auth/email-already-in-use") {
         errorMessage =
@@ -63,9 +64,10 @@ export default function SignUpForm() {
         errorMessage = "Format nomor HP tidak valid.";
       } else if (err.code === "auth/weak-password") {
         errorMessage = "Password terlalu lemah. Minimal 6 karakter.";
+      } else {
+        errorMessage = "Terjadi kesalahan. Silakan coba lagi.";
       }
       setError(errorMessage);
-      console.error("Sign up error:", err);
     } finally {
       setLoading(false);
     }
