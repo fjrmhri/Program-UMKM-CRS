@@ -37,12 +37,9 @@ export default function LoginForm() {
         return;
       }
 
-      console.log("Berhasil login:", snapshot.val());
-
       navigate("/dashboard");
     } catch (err) {
       setError("Login gagal. Pastikan nomor HP dan password benar.");
-      console.error("Login error:", err);
     } finally {
       setLoading(false);
     }
@@ -50,13 +47,8 @@ export default function LoginForm() {
 
   return (
     <form onSubmit={handleLogin} className="space-y-5">
-      {" "}
-      {}
       {error && (
-        <p
-          className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative text-sm"
-          role="alert"
-        >
+        <p className="bg-red-100 border border-red-300 text-red-700 px-4 py-2 rounded-md text-sm">
           {error}
         </p>
       )}
@@ -72,7 +64,7 @@ export default function LoginForm() {
           id="phone"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 text-gray-900 placeholder-gray-400 transition duration-150 ease-in-out sm:text-sm"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-300 text-gray-900 placeholder-gray-400 text-sm transition"
           placeholder="Contoh: 081234567890"
           required
           disabled={loading}
@@ -90,7 +82,7 @@ export default function LoginForm() {
           id="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 text-gray-900 placeholder-gray-400 transition duration-150 ease-in-out sm:text-sm"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-300 text-gray-900 placeholder-gray-400 text-sm transition"
           placeholder="Masukkan password Anda"
           required
           disabled={loading}
@@ -98,7 +90,7 @@ export default function LoginForm() {
       </div>
       <button
         type="submit"
-        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out"
+        className="w-full h-10 px-4 rounded-lg bg-green-500 text-white text-sm font-medium hover:bg-green-600 transition flex items-center justify-center"
         disabled={loading}
       >
         {loading ? (

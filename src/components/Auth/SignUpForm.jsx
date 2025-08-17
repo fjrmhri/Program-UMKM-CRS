@@ -43,19 +43,12 @@ export default function SignUpForm() {
       const uid = userCredential.user.uid;
 
       await set(ref(db, `users/${uid}`), {
-        nama: meta.nama,
-        usaha: meta.usaha,
-        hp: meta.hp,
-        desa: meta.desa,
-        kota: meta.kota,
-        estate: meta.estate,
-        cdo: meta.cdo,
+        ...meta,
         createdAt: Date.now(),
       });
 
       navigate("/dashboard");
     } catch (err) {
-      console.error("Sign up error:", err);
       let errorMessage = "Registrasi gagal. Silakan coba lagi.";
       if (err.code === "auth/email-already-in-use") {
         errorMessage =
@@ -64,8 +57,6 @@ export default function SignUpForm() {
         errorMessage = "Format nomor HP tidak valid.";
       } else if (err.code === "auth/weak-password") {
         errorMessage = "Password terlalu lemah. Minimal 6 karakter.";
-      } else {
-        errorMessage = "Terjadi kesalahan. Silakan coba lagi.";
       }
       setError(errorMessage);
     } finally {
@@ -97,13 +88,10 @@ export default function SignUpForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6"
+      className="grid grid-cols-1 sm:grid-cols-2 gap-4"
     >
       {error && (
-        <p
-          className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative text-sm col-span-full"
-          role="alert"
-        >
+        <p className="bg-red-100 border border-red-300 text-red-700 px-4 py-2 rounded-md text-sm col-span-full">
           {error}
         </p>
       )}
@@ -122,7 +110,7 @@ export default function SignUpForm() {
             name={key}
             value={meta[key]}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 text-gray-900 placeholder-gray-400 transition duration-150 ease-in-out sm:text-sm"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-300 text-gray-900 placeholder-gray-400 text-sm transition"
             placeholder={
               key === "hp"
                 ? "Contoh: 081234567890"
@@ -135,8 +123,6 @@ export default function SignUpForm() {
       ))}
 
       <div className="flex flex-col col-span-full">
-        {" "}
-        {}
         <label
           htmlFor="password"
           className="block text-sm font-medium text-gray-700 mb-1"
@@ -148,19 +134,17 @@ export default function SignUpForm() {
           id="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 text-gray-900 placeholder-gray-400 transition duration-150 ease-in-out sm:text-sm"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-300 text-gray-900 placeholder-gray-400 text-sm transition"
           placeholder="Minimal 6 karakter"
           required
           disabled={loading}
         />
       </div>
 
-      <div className="col-span-full flex justify-end pt-2">
-        {" "}
-        {}
+      <div className="col-span-full pt-2">
         <button
           type="submit"
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out"
+          className="w-full h-10 px-4 rounded-lg bg-green-500 text-white text-sm font-medium hover:bg-green-600 transition flex items-center justify-center"
           disabled={loading}
         >
           {loading ? (
