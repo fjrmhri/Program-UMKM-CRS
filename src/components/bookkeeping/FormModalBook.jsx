@@ -104,6 +104,85 @@ export default function FormModalMSE({ onClose, existingData }) {
     return num.toLocaleString("id-ID");
   };
 
+  const cloneMonitoringData = (data) =>
+    data.map((mon) => ({
+      ...mon,
+      items: mon.items.map((item) => ({ ...item })),
+    }));
+
+  const computeFinancials = (currentMonitoring) => {
+    const clonedMonitoring = cloneMonitoringData(currentMonitoring);
+
+    let totalProduksi = 0;
+    let totalBiayaOperasional = 0;
+
+    const produksiMon = clonedMonitoring.find(
+      (mon) => mon.uraian === "Jumlah produksi per bulan"
+    );
+    if (produksiMon) {
+      totalProduksi = produksiMon.items.reduce((sum, item) => {
+        return sum + (parseFloat(cleanNumberString(item.hasil)) || 0);
+      }, 0);
+    }
+
+    const biayaMon = clonedMonitoring.find(
+      (mon) => mon.uraian === "Biaya operasional per bulan"
+    );
+    if (biayaMon) {
+      totalBiayaOperasional = biayaMon.items.reduce((sum, item) => {
+        if (item.nama === "Total") return sum;
+        return sum + (parseFloat(cleanNumberString(item.hasil)) || 0);
+      }, 0);
+    }
+
+    const omsetMonIndex = clonedMonitoring.findIndex(
+      (mon) => mon.uraian === "Omset / penjualan per bulan"
+    );
+    if (omsetMonIndex !== -1) {
+      clonedMonitoring[omsetMonIndex].items[0].hasil =
+        formatNumber(totalProduksi);
+    }
+
+    const totalBiayaOperasionalMonIndex = clonedMonitoring.findIndex(
+      (mon) => mon.uraian === "Total biaya operasional per bulan"
+    );
+    if (totalBiayaOperasionalMonIndex !== -1) {
+      clonedMonitoring[totalBiayaOperasionalMonIndex].items[0].hasil =
+        formatNumber(totalBiayaOperasional);
+    }
+
+    const labaBersih = totalProduksi - totalBiayaOperasional;
+
+    const UMK_KUANSING = 3692796;
+    const BATAS_MANDIRI = 15000000;
+    let klasifikasi = "";
+
+    if (labaBersih < UMK_KUANSING) {
+      klasifikasi = "Tumbuh";
+    } else if (labaBersih >= UMK_KUANSING && labaBersih < BATAS_MANDIRI) {
+      klasifikasi = "Berkembang";
+    } else if (labaBersih >= BATAS_MANDIRI) {
+      klasifikasi = "Mandiri";
+    }
+
+    return {
+      monitoring: clonedMonitoring,
+      klasifikasi,
+      labaBersih,
+    };
+  };
+
+  const setMonitoringWithFinancials = (nextMonitoring) => {
+    const { monitoring: normalizedMonitoring, klasifikasi, labaBersih } =
+      computeFinancials(nextMonitoring);
+    setMonitoring(normalizedMonitoring);
+    setMeta((prevMeta) => ({
+      ...prevMeta,
+      klasifikasi,
+      labaBersih,
+    }));
+  };
+
   useEffect(() => {
     if (isEditMode) {
       setMeta(existingData.meta || {});
@@ -125,7 +204,7 @@ export default function FormModalMSE({ onClose, existingData }) {
           items: itemsToUse,
         };
       });
-      setMonitoring(mergedMonitoring);
+      setMonitoringWithFinancials(mergedMonitoring);
     } else {
       if (userData) {
         setMeta((prevMeta) => ({
@@ -140,103 +219,34 @@ export default function FormModalMSE({ onClose, existingData }) {
         }));
       }
 
-      setMonitoring(
-        monitoringTemplate.map((mon) => ({
-          ...mon,
-          items: mon.items.map((item) => ({ ...item, hasil: "" })),
-        }))
-      );
+      const resetMonitoring = monitoringTemplate.map((mon) => ({
+        ...mon,
+        items: mon.items.map((item) => ({ ...item, hasil: "" })),
+      }));
+      setMonitoringWithFinancials(resetMonitoring);
     }
   }, [existingData, userData, isEditMode]);
 
-  const calculateFinancials = (currentMonitoring) => {
-    let totalProduksi = 0;
-    let totalBiayaOperasional = 0;
-
-    const produksiMon = currentMonitoring.find(
-      (mon) => mon.uraian === "Jumlah produksi per bulan"
-    );
-    if (produksiMon) {
-      totalProduksi = produksiMon.items.reduce((sum, item) => {
-        return sum + (parseFloat(cleanNumberString(item.hasil)) || 0);
-      }, 0);
-    }
-
-    const biayaMon = currentMonitoring.find(
-      (mon) => mon.uraian === "Biaya operasional per bulan"
-    );
-    if (biayaMon) {
-      totalBiayaOperasional = biayaMon.items.reduce((sum, item) => {
-        if (item.nama === "Total") return sum;
-        return sum + (parseFloat(cleanNumberString(item.hasil)) || 0);
-      }, 0);
-    }
-
-    const updatedMonitoring = [...currentMonitoring];
-    const omsetMonIndex = updatedMonitoring.findIndex(
-      (mon) => mon.uraian === "Omset / penjualan per bulan"
-    );
-    if (omsetMonIndex !== -1) {
-      updatedMonitoring[omsetMonIndex].items[0].hasil =
-        formatNumber(totalProduksi);
-    }
-
-    const totalBiayaOperasionalMonIndex = updatedMonitoring.findIndex(
-      (mon) => mon.uraian === "Total biaya operasional per bulan"
-    );
-    if (totalBiayaOperasionalMonIndex !== -1) {
-      updatedMonitoring[totalBiayaOperasionalMonIndex].items[0].hasil =
-        formatNumber(totalBiayaOperasional);
-    }
-
-    const labaBersih = totalProduksi - totalBiayaOperasional;
-
-    const UMK_KUANSING = 3692796;
-    const BATAS_MANDIRI = 15000000;
-    let klasifikasi = "";
-
-    if (labaBersih < UMK_KUANSING) {
-      klasifikasi = "Tumbuh";
-    } else if (labaBersih >= UMK_KUANSING && labaBersih < BATAS_MANDIRI) {
-      klasifikasi = "Berkembang";
-    } else if (labaBersih >= BATAS_MANDIRI) {
-      klasifikasi = "Mandiri";
-    }
-
-    setMonitoring(updatedMonitoring);
-    setMeta((prevMeta) => ({
-      ...prevMeta,
-      klasifikasi: klasifikasi,
-      labaBersih: labaBersih,
-    }));
-  };
-
   const handleItemChange = (monIdx, itemIdx, field, value) => {
-    const updated = [...monitoring];
-
+    const updated = cloneMonitoringData(monitoring);
     if (field === "hasil") {
       updated[monIdx].items[itemIdx][field] = formatNumber(value);
     } else {
       updated[monIdx].items[itemIdx][field] = value;
     }
-    setMonitoring(updated);
+    setMonitoringWithFinancials(updated);
   };
 
-  useEffect(() => {
-    calculateFinancials(monitoring);
-  }, [monitoring]);
-
   const handleAddItem = (monIdx) => {
-    const updated = [...monitoring];
+    const updated = cloneMonitoringData(monitoring);
     updated[monIdx].items.push({ nama: "", hasil: "" });
-    setMonitoring(updated);
+    setMonitoringWithFinancials(updated);
   };
 
   const handleRemoveItem = (monIdx, itemIdx) => {
-    const updated = [...monitoring];
+    const updated = cloneMonitoringData(monitoring);
     updated[monIdx].items.splice(itemIdx, 1);
-    setMonitoring(updated);
-    calculateFinancials(updated);
+    setMonitoringWithFinancials(updated);
   };
 
   const handleSubmit = async (e) => {
