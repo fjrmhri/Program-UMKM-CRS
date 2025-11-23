@@ -1,19 +1,22 @@
 import React, { useState } from "react";
 import {
   BrowserRouter as Router,
-  Routes,
-  Route,
   Navigate,
+  Route,
+  Routes,
 } from "react-router-dom";
+
 import { useAuth } from "./context/AuthContext";
-import LoginPage from "./pages/LoginPage";
-import SignUpPage from "./pages/SignUpPage";
 import DashboardBook from "./components/bookkeeping/DashboardBook";
 import FormModalMSE from "./components/bookkeeping/FormModalBook";
+import LoginPage from "./pages/LoginPage";
+import SignUpPage from "./pages/SignUpPage";
 
 export default function App() {
   const { user, loading } = useAuth();
   const [showForm, setShowForm] = useState(false);
+
+  // Menunggu status autentikasi agar rute tidak salah arah ketika sedang memeriksa sesi
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-500 text-lg">

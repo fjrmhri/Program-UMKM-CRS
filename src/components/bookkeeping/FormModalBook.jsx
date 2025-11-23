@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { db } from "../../firebase";
+import React, { useCallback, useEffect, useState } from "react";
 import { ref, set, update } from "firebase/database";
 import { v4 as uuidv4 } from "uuid";
+
 import { useAuth } from "../../context/AuthContext";
+import { db } from "../../firebase";
 
 const monitoringTemplate = [
   {
@@ -82,6 +83,85 @@ const monitoringTemplate = [
   },
 ];
 
+const cleanNumberString = (value) => {
+  if (typeof value !== "string") return value;
+  return value.replace(/[^0-9,-]+/g, "").replace(",", ".");
+};
+
+const formatNumber = (value) => {
+  if (value === null || value === undefined || value === "") return "";
+  const num = parseFloat(cleanNumberString(String(value)));
+  if (Number.isNaN(num)) return "";
+  return num.toLocaleString("id-ID");
+};
+
+const cloneMonitoringData = (data) =>
+  data.map((mon) => ({
+    ...mon,
+    items: mon.items.map((item) => ({ ...item })),
+  }));
+
+const computeFinancials = (currentMonitoring) => {
+  const clonedMonitoring = cloneMonitoringData(currentMonitoring);
+
+  let totalProduksi = 0;
+  let totalBiayaOperasional = 0;
+
+  const produksiMon = clonedMonitoring.find(
+    (mon) => mon.uraian === "Jumlah produksi per bulan"
+  );
+  if (produksiMon) {
+    totalProduksi = produksiMon.items.reduce((sum, item) => {
+      return sum + (parseFloat(cleanNumberString(item.hasil)) || 0);
+    }, 0);
+  }
+
+  const biayaMon = clonedMonitoring.find(
+    (mon) => mon.uraian === "Biaya operasional per bulan"
+  );
+  if (biayaMon) {
+    totalBiayaOperasional = biayaMon.items.reduce((sum, item) => {
+      if (item.nama === "Total") return sum;
+      return sum + (parseFloat(cleanNumberString(item.hasil)) || 0);
+    }, 0);
+  }
+
+  const omsetMonIndex = clonedMonitoring.findIndex(
+    (mon) => mon.uraian === "Omset / penjualan per bulan"
+  );
+  if (omsetMonIndex !== -1) {
+    clonedMonitoring[omsetMonIndex].items[0].hasil = formatNumber(totalProduksi);
+  }
+
+  const totalBiayaOperasionalMonIndex = clonedMonitoring.findIndex(
+    (mon) => mon.uraian === "Total biaya operasional per bulan"
+  );
+  if (totalBiayaOperasionalMonIndex !== -1) {
+    clonedMonitoring[totalBiayaOperasionalMonIndex].items[0].hasil =
+      formatNumber(totalBiayaOperasional);
+  }
+
+  const labaBersih = totalProduksi - totalBiayaOperasional;
+
+  const UMK_KUANSING = 3692796;
+  const BATAS_MANDIRI = 15000000;
+  let klasifikasi = "";
+
+  if (labaBersih < UMK_KUANSING) {
+    klasifikasi = "Tumbuh";
+  } else if (labaBersih >= UMK_KUANSING && labaBersih < BATAS_MANDIRI) {
+    klasifikasi = "Berkembang";
+  } else if (labaBersih >= BATAS_MANDIRI) {
+    klasifikasi = "Mandiri";
+  }
+
+  return {
+    monitoring: clonedMonitoring,
+    klasifikasi,
+    labaBersih,
+  };
+};
+
 export default function FormModalMSE({ onClose, existingData }) {
   const { userData, user } = useAuth();
   const [meta, setMeta] = useState({
@@ -90,89 +170,11 @@ export default function FormModalMSE({ onClose, existingData }) {
     labaBersih: 0,
   });
   const [monitoring, setMonitoring] = useState(monitoringTemplate);
+  const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditMode = !!existingData;
 
-  const cleanNumberString = (str) => {
-    if (typeof str !== "string") return str;
-    return str.replace(/[^0-9,-]+/g, "").replace(",", ".");
-  };
-
-  const formatNumber = (value) => {
-    if (value === null || value === undefined || value === "") return "";
-    const num = parseFloat(cleanNumberString(String(value)));
-    if (isNaN(num)) return "";
-    return num.toLocaleString("id-ID");
-  };
-
-  const cloneMonitoringData = (data) =>
-    data.map((mon) => ({
-      ...mon,
-      items: mon.items.map((item) => ({ ...item })),
-    }));
-
-  const computeFinancials = (currentMonitoring) => {
-    const clonedMonitoring = cloneMonitoringData(currentMonitoring);
-
-    let totalProduksi = 0;
-    let totalBiayaOperasional = 0;
-
-    const produksiMon = clonedMonitoring.find(
-      (mon) => mon.uraian === "Jumlah produksi per bulan"
-    );
-    if (produksiMon) {
-      totalProduksi = produksiMon.items.reduce((sum, item) => {
-        return sum + (parseFloat(cleanNumberString(item.hasil)) || 0);
-      }, 0);
-    }
-
-    const biayaMon = clonedMonitoring.find(
-      (mon) => mon.uraian === "Biaya operasional per bulan"
-    );
-    if (biayaMon) {
-      totalBiayaOperasional = biayaMon.items.reduce((sum, item) => {
-        if (item.nama === "Total") return sum;
-        return sum + (parseFloat(cleanNumberString(item.hasil)) || 0);
-      }, 0);
-    }
-
-    const omsetMonIndex = clonedMonitoring.findIndex(
-      (mon) => mon.uraian === "Omset / penjualan per bulan"
-    );
-    if (omsetMonIndex !== -1) {
-      clonedMonitoring[omsetMonIndex].items[0].hasil =
-        formatNumber(totalProduksi);
-    }
-
-    const totalBiayaOperasionalMonIndex = clonedMonitoring.findIndex(
-      (mon) => mon.uraian === "Total biaya operasional per bulan"
-    );
-    if (totalBiayaOperasionalMonIndex !== -1) {
-      clonedMonitoring[totalBiayaOperasionalMonIndex].items[0].hasil =
-        formatNumber(totalBiayaOperasional);
-    }
-
-    const labaBersih = totalProduksi - totalBiayaOperasional;
-
-    const UMK_KUANSING = 3692796;
-    const BATAS_MANDIRI = 15000000;
-    let klasifikasi = "";
-
-    if (labaBersih < UMK_KUANSING) {
-      klasifikasi = "Tumbuh";
-    } else if (labaBersih >= UMK_KUANSING && labaBersih < BATAS_MANDIRI) {
-      klasifikasi = "Berkembang";
-    } else if (labaBersih >= BATAS_MANDIRI) {
-      klasifikasi = "Mandiri";
-    }
-
-    return {
-      monitoring: clonedMonitoring,
-      klasifikasi,
-      labaBersih,
-    };
-  };
-
-  const setMonitoringWithFinancials = (nextMonitoring) => {
+  const setMonitoringWithFinancials = useCallback((nextMonitoring) => {
     const { monitoring: normalizedMonitoring, klasifikasi, labaBersih } =
       computeFinancials(nextMonitoring);
     setMonitoring(normalizedMonitoring);
@@ -181,7 +183,7 @@ export default function FormModalMSE({ onClose, existingData }) {
       klasifikasi,
       labaBersih,
     }));
-  };
+  }, []);
 
   useEffect(() => {
     if (isEditMode) {
@@ -192,12 +194,10 @@ export default function FormModalMSE({ onClose, existingData }) {
           (mon) => mon.uraian === templateMon.uraian
         );
 
-        const itemsToUse = (existingMon?.items || templateMon.items).map(
-          (item) => ({
-            ...item,
-            hasil: formatNumber(item.hasil),
-          })
-        );
+        const itemsToUse = (existingMon?.items || templateMon.items).map((item) => ({
+          ...item,
+          hasil: formatNumber(item.hasil),
+        }));
 
         return {
           ...templateMon,
@@ -225,7 +225,7 @@ export default function FormModalMSE({ onClose, existingData }) {
       }));
       setMonitoringWithFinancials(resetMonitoring);
     }
-  }, [existingData, userData, isEditMode]);
+  }, [existingData, userData, isEditMode, setMonitoringWithFinancials]);
 
   const handleItemChange = (monIdx, itemIdx, field, value) => {
     const updated = cloneMonitoringData(monitoring);
@@ -249,9 +249,13 @@ export default function FormModalMSE({ onClose, existingData }) {
     setMonitoringWithFinancials(updated);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // Simpan monitoring ke Firebase dengan error handling sederhana
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (!user) return;
     const id = isEditMode ? existingData.id : uuidv4();
+    setSubmitError("");
+    setIsSubmitting(true);
 
     const monitoringDataToSave = monitoring.map((mon) => ({
       uraian: mon.uraian,
@@ -278,9 +282,16 @@ export default function FormModalMSE({ onClose, existingData }) {
       ...(isEditMode ? {} : { createdAt: Date.now() }),
     };
 
-    const targetRef = ref(db, `bookkeeping/${user.uid}/${id}`);
-    await (isEditMode ? update(targetRef, payload) : set(targetRef, payload));
-    onClose();
+    try {
+      const targetRef = ref(db, `bookkeeping/${user.uid}/${id}`);
+      await (isEditMode ? update(targetRef, payload) : set(targetRef, payload));
+      onClose();
+    } catch (error) {
+      console.error("Gagal menyimpan monitoring:", error);
+      setSubmitError("Data tidak tersimpan. Periksa koneksi lalu coba kembali.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -290,6 +301,12 @@ export default function FormModalMSE({ onClose, existingData }) {
           <h2 className="text-2xl font-bold text-gray-800">
             {isEditMode ? "Edit Monitoring MSE" : "Input Monitoring MSE"}
           </h2>
+
+          {submitError && (
+            <p className="bg-red-100 border border-red-300 text-red-700 px-4 py-2 rounded-md text-sm">
+              {submitError}
+            </p>
+          )}
 
           {/* Meta Data */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -301,7 +318,7 @@ export default function FormModalMSE({ onClose, existingData }) {
                 type="date"
                 name="tanggal"
                 value={meta.tanggal || ""}
-                onChange={(e) => setMeta({ ...meta, tanggal: e.target.value })}
+                onChange={(event) => setMeta({ ...meta, tanggal: event.target.value })}
                 className="h-10 px-3 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-300"
                 required
               />
@@ -311,13 +328,8 @@ export default function FormModalMSE({ onClose, existingData }) {
           {/* Monitoring Items */}
           <div className="space-y-6">
             {monitoring.map((mon, monIdx) => (
-              <div
-                key={monIdx}
-                className="bg-gray-50 border rounded-lg p-4 shadow-sm"
-              >
-                <h3 className="font-semibold text-gray-800 mb-4">
-                  {mon.uraian}
-                </h3>
+              <div key={monIdx} className="bg-gray-50 border rounded-lg p-4 shadow-sm">
+                <h3 className="font-semibold text-gray-800 mb-4">{mon.uraian}</h3>
                 <div className="space-y-4">
                   {mon.items.map((item, itemIdx) => (
                     <div
@@ -330,19 +342,12 @@ export default function FormModalMSE({ onClose, existingData }) {
                         <input
                           type="text"
                           value={item.nama || ""}
-                          onChange={(e) =>
-                            handleItemChange(
-                              monIdx,
-                              itemIdx,
-                              "nama",
-                              e.target.value
-                            )
+                          onChange={(event) =>
+                            handleItemChange(monIdx, itemIdx, "nama", event.target.value)
                           }
                           className="h-10 px-3 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-300"
                           placeholder="Nama Item"
-                          required={
-                            mon.defaultItems.length === 0 && mon.showItem
-                          }
+                          required={mon.defaultItems.length === 0 && mon.showItem}
                           disabled={mon.defaultItems.length > 0}
                         />
                       )}
@@ -359,13 +364,8 @@ export default function FormModalMSE({ onClose, existingData }) {
                         <input
                           type="text"
                           value={item.hasil || ""}
-                          onChange={(e) =>
-                            handleItemChange(
-                              monIdx,
-                              itemIdx,
-                              "hasil",
-                              e.target.value
-                            )
+                          onChange={(event) =>
+                            handleItemChange(monIdx, itemIdx, "hasil", event.target.value)
                           }
                           className="h-10 px-3 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-300"
                           placeholder="Nilai hasil"
@@ -403,6 +403,7 @@ export default function FormModalMSE({ onClose, existingData }) {
             <button
               type="submit"
               className="h-10 px-4 rounded-lg bg-green-500 text-white text-sm font-medium hover:bg-green-600 transition"
+              disabled={isSubmitting}
             >
               {isEditMode ? "Perbarui Data" : "Simpan"}
             </button>

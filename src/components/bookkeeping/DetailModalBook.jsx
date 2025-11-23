@@ -1,5 +1,6 @@
 import React from "react";
 
+// Modal ringkas untuk menampilkan detail monitoring tanpa mengubah data asli
 export default function DetailModalBook({ data, onClose }) {
   const { meta = {}, monitoring = [], comparison } = data;
 
@@ -21,7 +22,7 @@ export default function DetailModalBook({ data, onClose }) {
     ["CDO", meta.cdo],
     ["Tanggal Monitoring", meta.tanggal],
     ["Klasifikasi", meta.klasifikasi],
-  ].filter(([_, value]) => value);
+  ].filter(([, value]) => value);
 
   const showComparison = Boolean(comparison);
 
@@ -34,13 +35,9 @@ export default function DetailModalBook({ data, onClose }) {
       <div className="bg-white p-6 rounded-2xl shadow-xl w-full sm:max-w-xl md:max-w-3xl lg:max-w-4xl space-y-6 mx-3">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900">
-              Detail Monitoring MSE
-            </h2>
+            <h2 className="text-2xl font-bold text-slate-900">Detail Monitoring MSE</h2>
             {meta.tanggal && (
-              <p className="text-sm text-slate-500">
-                Tanggal pengisian: {meta.tanggal}
-              </p>
+              <p className="text-sm text-slate-500">Tanggal pengisian: {meta.tanggal}</p>
             )}
           </div>
           <button
@@ -56,9 +53,7 @@ export default function DetailModalBook({ data, onClose }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm bg-slate-50 rounded-xl p-4">
             {metaEntries.map(([label, val]) => (
               <div key={label}>
-                <p className="text-slate-500 text-xs uppercase tracking-wide">
-                  {label}
-                </p>
+                <p className="text-slate-500 text-xs uppercase tracking-wide">{label}</p>
                 <p className="font-semibold text-slate-900">{val}</p>
               </div>
             ))}
@@ -73,9 +68,7 @@ export default function DetailModalBook({ data, onClose }) {
                 <th className="p-3 text-left font-semibold">Item</th>
                 <th className="p-3 text-right font-semibold">Hasil Monitoring</th>
                 {showComparison && (
-                  <th className="p-3 text-right font-semibold">
-                    Hasil Perbandingan
-                  </th>
+                  <th className="p-3 text-right font-semibold">Hasil Perbandingan</th>
                 )}
               </tr>
             </thead>
@@ -83,9 +76,7 @@ export default function DetailModalBook({ data, onClose }) {
               {monitoring.map((row, i) =>
                 row.uraian === "Omset / penjualan per bulan" ? (
                   <tr key={row.uraian} className="border-t border-slate-100">
-                    <td className="p-3 font-semibold text-slate-800">
-                      {row.uraian}
-                    </td>
+                    <td className="p-3 font-semibold text-slate-800">{row.uraian}</td>
                     <td className="p-3 text-slate-600">Rp</td>
                     <td className="p-3 text-right font-semibold text-slate-900">
                       {formatHasil(row.items[0]?.hasil)}
@@ -100,16 +91,11 @@ export default function DetailModalBook({ data, onClose }) {
                   row.items.map((item, idx) => (
                     <tr key={`${row.uraian}-${idx}`} className="border-t border-slate-100">
                       {idx === 0 && (
-                        <td
-                          className="p-3 font-semibold text-slate-800 align-top"
-                          rowSpan={row.items.length}
-                        >
+                        <td className="p-3 font-semibold text-slate-800 align-top" rowSpan={row.items.length}>
                           {row.uraian}
                         </td>
                       )}
-                      <td className="p-3 text-slate-600">
-                        {item.nama || "-"}
-                      </td>
+                      <td className="p-3 text-slate-600">{item.nama || "-"}</td>
                       <td className="p-3 text-right font-semibold text-slate-900">
                         {formatHasil(item.hasil)}
                       </td>

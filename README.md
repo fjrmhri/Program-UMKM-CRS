@@ -1,41 +1,48 @@
+<p align="center">
+  <img src="https://img.shields.io/github/stars/fjrmhri/Program-UMKM-CRS?style=for-the-badge&logo=github&color=8b5cf6" alt="Stars"/>
+  <img src="https://img.shields.io/github/license/fjrmhri/Program-UMKM-CRS?style=for-the-badge&color=10b981" alt="License"/>
+  <img src="https://img.shields.io/badge/React-18.3.1-61DAFB?style=for-the-badge&logo=react" alt="React"/>
+  <img src="https://img.shields.io/badge/Vite-7.0.4-646CFF?style=for-the-badge&logo=vite" alt="Vite"/>
+  <img src="https://img.shields.io/badge/Firebase-12.0.0-FFCA28?style=for-the-badge&logo=firebase" alt="Firebase"/>
+  <img src="https://img.shields.io/badge/TailwindCSS-3.4.17-38bdf8?style=for-the-badge&logo=tailwind-css" alt="TailwindCSS"/>
+</p>
+
 # Program UMKM CSR Dashboard
 
-A web dashboard built with Vite + React + Tailwind CSS for monitoring UMKM (small business) bookkeeping data within the RAPP Estate Cerenti CSR program. The app provides authentication for mitra, tools to input monitoring data, and visual insights to understand financial health trends.
+Dashboard web untuk memantau pembukuan dan perkembangan UMKM binaan Program CSR RAPP Estate Cerenti. Aplikasi dibangun dengan React + Vite dan terhubung ke Firebase untuk autentikasi serta penyimpanan realtime sehingga mitra dapat memasukkan data monitoring, melihat tren, dan mencatat tindak lanjut.
 
-## Features
+## Fitur Utama
 
-- **Authentication for Mitra** – Login/sign-up flow using Firebase Authentication with phone-number-based emails.
-- **Realtime data storage** – Bookkeeping records, notes, and monitoring details are stored in Firebase Realtime Database.
-- **Responsive dashboard** – KPI cards, sortable history table, and contextual notes adapt to mobile & desktop viewports.
-- **Guided monitoring form** – Dynamic sections with automatic calculations for omset, operational cost, and business classification (Tumbuh/Berkembang/Mandiri).
-- **Visual insights** – Line chart modal to compare omset across time and spotlight cards for the latest monitoring session.
-- **Personal notes** – Lightweight notebook to capture follow-ups per mitra.
+- **Autentikasi mitra** dengan alur login/registrasi berbasis nomor HP (email pseudo).
+- **Pencatatan monitoring MSE** lengkap dengan kalkulasi otomatis omset, biaya operasional, dan klasifikasi usaha.
+- **Grafik perkembangan** menggunakan Recharts untuk membaca tren omset.
+- **Catatan pribadi** bagi pendamping/mitra agar tindak lanjut mudah dilacak.
+- **Antarmuka responsif** yang nyaman diakses di desktop maupun perangkat mobile.
 
-## Tech Stack
+## Persyaratan
 
-- [React 18](https://react.dev/) + [Vite](https://vitejs.dev/) for the SPA
-- [Tailwind CSS](https://tailwindcss.com/) for styling
-- [Firebase Authentication & Realtime Database](https://firebase.google.com/)
-- [Recharts](https://recharts.org/) for data visualization
-- [Lucide](https://lucide.dev/) for icons
+- Node.js 18+ dan npm 9+
+- Proyek Firebase dengan Authentication dan Realtime Database aktif
 
-## Getting Started
+## Cara Instalasi & Menjalankan
 
-### Prerequisites
+1. **Kloning repositori** dan masuk ke folder proyek.
+2. **Instal dependensi**:
+   ```bash
+   npm install
+   ```
+3. **Siapkan environment** (lihat bagian berikut).
+4. **Jalankan pengembangan**:
+   ```bash
+   npm run dev
+   ```
+   Aplikasi akan tersedia di `http://localhost:5173` secara default.
 
-- Node.js 18+
-- npm 9+
-- Firebase project with Authentication and Realtime Database enabled
+Untuk build produksi, gunakan `npm run build` lalu `npm run preview` untuk pratinjau lokal.
 
-### Installation
+## Konfigurasi Environment
 
-```bash
-npm install
-```
-
-### Environment variables
-
-Create a `.env` file (or `.env.local`) at the project root with your Firebase credentials:
+Buat berkas `.env` atau `.env.local` di akar proyek dengan kredensial Firebase Anda:
 
 ```
 VITE_FIREBASE_API_KEY=your_api_key
@@ -48,34 +55,28 @@ VITE_FIREBASE_APP_ID=your_app_id
 VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
 ```
 
-### Available scripts
+Pastikan Realtime Database menggunakan rules yang sesuai kebutuhan keamanan program CSR.
 
-| Command         | Description                                     |
-| --------------- | ----------------------------------------------- |
-| `npm run dev`   | Start Vite dev server (default http://localhost:5173) |
-| `npm run build` | Build production assets                         |
-| `npm run preview` | Preview the production build locally           |
-| `npm run lint`  | Run ESLint                                      |
-
-## Project structure
+## Struktur Proyek
 
 ```
 src/
-├── components/      # Auth forms, dashboard widgets, modals
-├── context/         # Authentication context
-├── pages/           # Top-level pages (Login, Sign Up)
-├── assets/          # Static assets such as logos
-├── firebase.js      # Firebase initialization
-├── App.jsx          # Router + layout
-└── main.jsx         # Entry point
+├── assets/                # Logo dan aset statis
+├── components/            # Komponen UI (auth, dashboard, modal)
+├── context/               # Context React untuk autentikasi
+├── pages/                 # Halaman Login & Sign Up
+├── firebase.js            # Inisialisasi Firebase
+├── App.jsx                # Routing utama
+└── main.jsx               # Entry point React
 ```
 
-## Contributing
+## Skrip NPM
 
-1. Fork the repo and create a feature branch.
-2. Make your changes with clear commits.
-3. Run `npm run build` (and tests if added) before opening a PR.
+- `npm run dev` – Menjalankan server pengembangan Vite.
+- `npm run build` – Membuat build produksi.
+- `npm run preview` – Menjalankan pratinjau build produksi.
+- `npm run lint` – Mengecek gaya kode dengan ESLint.
 
-## License
+## Lisensi
 
-This project is distributed solely for internal CSR program operations. Contact the maintainers before reusing or distributing the source code.
+Proyek ini ditujukan untuk operasional internal Program CSR. Silakan hubungi maintainer sebelum menggunakan atau mendistribusikan ulang kode sumber.
