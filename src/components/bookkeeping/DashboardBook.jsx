@@ -1,47 +1,39 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { db } from "../../firebase";
 import {
-  ref as dbRef,
-  onValue,
-  set,
-  remove as dbRemove,
-} from "firebase/database";
-import { v4 as uuidv4 } from "uuid";
-import FormModalMSE from "./FormModalBook";
-import DetailModalBook from "./DetailModalBook";
-import { useAuth } from "../../context/AuthContext";
-
-import {
-  LineChart as RLineChart,
+  CartesianGrid,
   Line,
+  LineChart as RLineChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  Tooltip,
-  CartesianGrid,
-  ResponsiveContainer,
 } from "recharts";
-
 import {
-  LineChart as LineChartIcon,
-  Eye,
-  Pencil,
-  Trash2,
-  LogOut,
-  Plus,
-  ChevronUp,
-  ChevronDown,
-  StickyNote,
   CalendarDays,
-  UserCircle2,
+  Eye,
+  LineChart as LineChartIcon,
+  LogOut,
+  Pencil,
+  Plus,
+  StickyNote,
+  Trash2,
   TrendingUp,
+  UserCircle2,
   Wallet,
 } from "lucide-react";
+import { onValue, ref as dbRef, remove as dbRemove, set } from "firebase/database";
+import { v4 as uuidv4 } from "uuid";
+
+import { useAuth } from "../../context/AuthContext";
+import { db } from "../../firebase";
+import DetailModalBook from "./DetailModalBook";
+import FormModalMSE from "./FormModalBook";
 
 // Utility: format Rupiah
 const toIDR = (value) => {
-  const n = Number(value ?? 0);
-  if (Number.isNaN(n)) return "-";
-  return n.toLocaleString("id-ID", {
+  const numberValue = Number(value ?? 0);
+  if (Number.isNaN(numberValue)) return "-";
+  return numberValue.toLocaleString("id-ID", {
     style: "currency",
     currency: "IDR",
     maximumFractionDigits: 0,
@@ -53,6 +45,7 @@ export default function DashboardBook({ onAddForm }) {
 
   const [datasets, setDatasets] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
+  const [actionError, setActionError] = useState("");
 
   const [sortOrder, setSortOrder] = useState("desc");
   const [editData, setEditData] = useState(null);
@@ -67,50 +60,66 @@ export default function DashboardBook({ onAddForm }) {
   useEffect(() => {
     if (!user) return;
     setLoadingData(true);
-    const q = dbRef(db, `bookkeeping/${user.uid}`);
-    const unsub = onValue(
-      q,
+    const bookkeepingRef = dbRef(db, `bookkeeping/${user.uid}`);
+    const unsubscribe = onValue(
+      bookkeepingRef,
       (snap) => {
         const data = snap.val();
-        const arr = data
+        const parsed = data
           ? Object.entries(data)
               .map(([id, val]) => ({ id, ...val }))
-              .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+              .sort((first, second) =>
+                (second.createdAt || 0) - (first.createdAt || 0)
+              )
           : [];
-        setDatasets(arr);
+        setDatasets(parsed);
         setLoadingData(false);
       },
-      () => setLoadingData(false)
+      (error) => {
+        console.error("Gagal memuat data pembukuan:", error);
+        setActionError("Gagal memuat data pembukuan. Muat ulang untuk mencoba kembali.");
+        setLoadingData(false);
+      }
     );
-    return () => unsub();
+    return () => unsubscribe();
   }, [user]);
 
   // ---- Fetch notes
   useEffect(() => {
     if (!user) return;
     const notesRef = dbRef(db, `notes/${user.uid}`);
-    const unsub = onValue(notesRef, (snap) => {
-      const data = snap.val();
-      const arr = data
-        ? Object.entries(data)
-            .map(([key, val]) => ({ ...val, id: key }))
-            .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
-        : [];
-      setNotes(arr);
-    });
-    return () => unsub();
+    const unsubscribe = onValue(
+      notesRef,
+      (snap) => {
+        const data = snap.val();
+        const parsed = data
+          ? Object.entries(data)
+              .map(([key, val]) => ({ ...val, id: key }))
+              .sort((first, second) =>
+                (second.createdAt || 0) - (first.createdAt || 0)
+              )
+          : [];
+        setNotes(parsed);
+      },
+      (error) => {
+        console.error("Gagal memuat catatan:", error);
+        setActionError("Tidak dapat memuat catatan. Coba beberapa saat lagi.");
+      }
+    );
+    return () => unsubscribe();
   }, [user]);
 
   // ---- Helpers
-  const getOmset = (d) =>
+  const getOmset = (record) =>
     parseFloat(
-      d?.monitoring?.find((mon) => mon.uraian === "Omset / penjualan per bulan")
-        ?.items?.[0]?.hasil || 0
+      record?.monitoring?.find(
+        (mon) => mon.uraian === "Omset / penjualan per bulan"
+      )?.items?.[0]?.hasil || 0
     );
 
-  const getTotalBiaya = (d) =>
+  const getTotalBiaya = (record) =>
     parseFloat(
-      d?.monitoring?.find(
+      record?.monitoring?.find(
         (mon) => mon.uraian === "Total biaya operasional per bulan"
       )?.items?.[0]?.hasil || 0
     );
@@ -140,35 +149,39 @@ export default function DashboardBook({ onAddForm }) {
   const latestBiaya = latestRecord ? getTotalBiaya(latestRecord) : 0;
   const latestLaba = latestOmset - latestBiaya;
 
+  // Menjaga proses sort dan perhitungan tetap efisien
   const sortedDatasets = useMemo(() => {
     const copy = [...datasets];
-    copy.sort((a, b) =>
+    copy.sort((first, second) =>
       sortOrder === "asc"
-        ? getOmset(a) - getOmset(b)
-        : getOmset(b) - getOmset(a)
+        ? getOmset(first) - getOmset(second)
+        : getOmset(second) - getOmset(first)
     );
     return copy;
   }, [datasets, sortOrder]);
 
-  const chartData = useMemo(() => {
-    return datasets
-      .map((d) => ({
-        tanggal: d?.meta?.tanggal || "",
-        omset: getOmset(d),
-      }))
-      .sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal));
-  }, [datasets]);
+  const chartData = useMemo(
+    () =>
+      datasets
+        .map((record) => ({
+          tanggal: record?.meta?.tanggal || "",
+          omset: getOmset(record),
+        }))
+        .sort((first, second) => new Date(first.tanggal) - new Date(second.tanggal)),
+    [datasets]
+  );
 
   // ---- KPIs
   const kpi = useMemo(() => {
     const count = datasets.length;
-    const totalOmset = datasets.reduce((sum, d) => sum + getOmset(d), 0);
-    const totalBiaya = datasets.reduce((sum, d) => sum + getTotalBiaya(d), 0);
+    const totalOmset = datasets.reduce((sum, record) => sum + getOmset(record), 0);
+    const totalBiaya = datasets.reduce(
+      (sum, record) => sum + getTotalBiaya(record),
+      0
+    );
     const avgOmset = count ? Math.round(totalOmset / count) : 0;
-    const lastMonth =
-      chartData.length > 0 ? chartData[chartData.length - 1].omset : 0;
-    const prevMonth =
-      chartData.length > 1 ? chartData[chartData.length - 2].omset : 0;
+    const lastMonth = chartData.length > 0 ? chartData[chartData.length - 1].omset : 0;
+    const prevMonth = chartData.length > 1 ? chartData[chartData.length - 2].omset : 0;
     const growth = prevMonth ? ((lastMonth - prevMonth) / prevMonth) * 100 : 0;
     return { count, totalOmset, totalBiaya, avgOmset, growth };
   }, [datasets, chartData]);
@@ -177,28 +190,44 @@ export default function DashboardBook({ onAddForm }) {
   const handleEdit = (data) => setEditData(data);
   const handleView = (data) => setViewData(data);
 
-  const handleDelete = (id) => {
-    if (window.confirm("Yakin hapus data ini?")) {
-      dbRemove(dbRef(db, `bookkeeping/${user.uid}/${id}`));
+  const handleDelete = async (id) => {
+    if (!window.confirm("Yakin hapus data ini?")) return;
+    if (!user) return;
+    try {
+      await dbRemove(dbRef(db, `bookkeeping/${user.uid}/${id}`));
+    } catch (error) {
+      console.error("Gagal menghapus data monitoring:", error);
+      setActionError("Data gagal dihapus. Periksa koneksi dan coba lagi.");
     }
   };
 
-  const handleAddNote = async (e) => {
-    e.preventDefault();
-    if (!newNote.trim()) return;
+  const handleAddNote = async (event) => {
+    event.preventDefault();
+    if (!newNote.trim() || !user) return;
     const noteId = uuidv4();
-    await set(dbRef(db, `notes/${user.uid}/${noteId}`), {
-      id: noteId,
-      text: newNote.trim(),
-      createdAt: Date.now(),
-      checked: false,
-    });
-    setNewNote("");
+    try {
+      await set(dbRef(db, `notes/${user.uid}/${noteId}`), {
+        id: noteId,
+        text: newNote.trim(),
+        createdAt: Date.now(),
+        checked: false,
+      });
+      setNewNote("");
+      setActionError("");
+    } catch (error) {
+      console.error("Gagal menyimpan catatan:", error);
+      setActionError("Catatan tidak tersimpan. Mohon coba kembali.");
+    }
   };
 
   const handleDeleteNote = async (id) => {
-    if (window.confirm("Hapus catatan ini?")) {
+    if (!window.confirm("Hapus catatan ini?")) return;
+    if (!user) return;
+    try {
       await dbRemove(dbRef(db, `notes/${user.uid}/${id}`));
+    } catch (error) {
+      console.error("Gagal menghapus catatan:", error);
+      setActionError("Catatan gagal dihapus. Periksa koneksi Anda.");
     }
   };
 
@@ -206,15 +235,18 @@ export default function DashboardBook({ onAddForm }) {
   return (
     <>
       <section className="max-w-6xl mx-auto px-4 py-10 space-y-6">
+        {actionError && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            {actionError}
+          </div>
+        )}
         <div className="rounded-3xl bg-white/90 backdrop-blur border border-white shadow-sm p-6 space-y-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="space-y-2 text-center md:text-left">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600">
                 Program CSR RAPP · Estate Cerenti
               </p>
-              <h2 className="text-3xl font-bold text-slate-900">
-                Pembukuan UMKM
-              </h2>
+              <h2 className="text-3xl font-bold text-slate-900">Pembukuan UMKM</h2>
               <p className="text-sm text-slate-600">
                 {latestClassification
                   ? `Status usaha berada pada kategori ${latestClassification}.`
@@ -246,12 +278,8 @@ export default function DashboardBook({ onAddForm }) {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="bg-gradient-to-r from-emerald-500 to-green-400 text-white rounded-2xl p-5 shadow-inner space-y-2">
-              <p className="text-xs uppercase tracking-wide text-white/70">
-                Profil UMKM
-              </p>
-              <p className="text-xl font-semibold">
-                {userData?.usaha || "UMKM Binaan"}
-              </p>
+              <p className="text-xs uppercase tracking-wide text-white/70">Profil UMKM</p>
+              <p className="text-xl font-semibold">{userData?.usaha || "UMKM Binaan"}</p>
               <p className="text-sm text-white/80">
                 {userData?.nama || "Mitra"}
                 {userData?.desa ? ` · ${userData.desa}` : ""}
@@ -290,42 +318,28 @@ export default function DashboardBook({ onAddForm }) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="rounded-2xl bg-white border border-slate-100 p-4 shadow-sm">
-            <p className="text-xs uppercase tracking-wide text-slate-500">
-              Total Omset
-            </p>
+            <p className="text-xs uppercase tracking-wide text-slate-500">Total Omset</p>
             <div className="flex items-center justify-between mt-2">
-              <p className="text-2xl font-bold text-slate-900">
-                {toIDR(kpi.totalOmset)}
-              </p>
+              <p className="text-2xl font-bold text-slate-900">{toIDR(kpi.totalOmset)}</p>
               <Wallet className="h-6 w-6 text-emerald-500" />
             </div>
           </div>
           <div className="rounded-2xl bg-white border border-slate-100 p-4 shadow-sm">
-            <p className="text-xs uppercase tracking-wide text-slate-500">
-              Total Biaya Operasional
-            </p>
+            <p className="text-xs uppercase tracking-wide text-slate-500">Total Biaya Operasional</p>
             <div className="flex items-center justify-between mt-2">
-              <p className="text-2xl font-bold text-slate-900">
-                {toIDR(kpi.totalBiaya)}
-              </p>
+              <p className="text-2xl font-bold text-slate-900">{toIDR(kpi.totalBiaya)}</p>
               <CalendarDays className="h-6 w-6 text-amber-500" />
             </div>
           </div>
           <div className="rounded-2xl bg-white border border-slate-100 p-4 shadow-sm">
-            <p className="text-xs uppercase tracking-wide text-slate-500">
-              Rata-rata Omset
-            </p>
+            <p className="text-xs uppercase tracking-wide text-slate-500">Rata-rata Omset</p>
             <div className="flex items-center justify-between mt-2">
-              <p className="text-2xl font-bold text-slate-900">
-                {toIDR(kpi.avgOmset)}
-              </p>
+              <p className="text-2xl font-bold text-slate-900">{toIDR(kpi.avgOmset)}</p>
               <LineChartIcon className="h-6 w-6 text-blue-500" />
             </div>
           </div>
           <div className="rounded-2xl bg-white border border-slate-100 p-4 shadow-sm">
-            <p className="text-xs uppercase tracking-wide text-slate-500">
-              Perubahan Bulan Terakhir
-            </p>
+            <p className="text-xs uppercase tracking-wide text-slate-500">Perubahan Bulan Terakhir</p>
             <div className="flex items-center justify-between mt-2">
               <p
                 className={`text-2xl font-bold ${
@@ -344,9 +358,7 @@ export default function DashboardBook({ onAddForm }) {
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b">
               <div>
-                <h3 className="text-lg font-semibold text-slate-900">
-                  Riwayat Monitoring
-                </h3>
+                <h3 className="text-lg font-semibold text-slate-900">Riwayat Monitoring</h3>
                 <p className="text-xs text-slate-500">
                   Urutkan berdasarkan omset untuk melihat performa terbaik
                 </p>
@@ -365,9 +377,7 @@ export default function DashboardBook({ onAddForm }) {
               </div>
             ) : datasets.length === 0 ? (
               <div className="text-center py-14 px-6">
-                <p className="text-base font-semibold text-slate-800">
-                  Belum ada data monitoring
-                </p>
+                <p className="text-base font-semibold text-slate-800">Belum ada data monitoring</p>
                 <p className="text-sm text-slate-500 mt-1">
                   Klik tombol “Input Data Baru” untuk menambahkan catatan pertama.
                 </p>
@@ -389,30 +399,30 @@ export default function DashboardBook({ onAddForm }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {sortedDatasets.map((d) => (
-                      <tr key={d.id} className="border-t border-slate-100 hover:bg-slate-50/60">
+                    {sortedDatasets.map((record) => (
+                      <tr key={record.id} className="border-t border-slate-100 hover:bg-slate-50/60">
                         <td className="px-6 py-3 text-slate-800">
-                          {formatDate(d?.meta?.tanggal, { dateStyle: "medium" })}
+                          {formatDate(record?.meta?.tanggal, { dateStyle: "medium" })}
                         </td>
                         <td className="px-6 py-3 font-semibold text-slate-900">
-                          {toIDR(getOmset(d))}
+                          {toIDR(getOmset(record))}
                         </td>
                         <td className="px-6 py-3">
                           <div className="flex flex-wrap gap-2">
                             <button
-                              onClick={() => handleView(d)}
+                              onClick={() => handleView(record)}
                               className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-4 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
                             >
                               <Eye className="h-3.5 w-3.5" /> Detail
                             </button>
                             <button
-                              onClick={() => handleEdit(d)}
+                              onClick={() => handleEdit(record)}
                               className="inline-flex items-center gap-1 rounded-full border border-amber-200 px-4 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50"
                             >
                               <Pencil className="h-3.5 w-3.5" /> Edit
                             </button>
                             <button
-                              onClick={() => handleDelete(d.id)}
+                              onClick={() => handleDelete(record.id)}
                               className="inline-flex items-center gap-1 rounded-full border border-rose-200 px-4 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50"
                             >
                               <Trash2 className="h-3.5 w-3.5" /> Hapus
@@ -430,9 +440,7 @@ export default function DashboardBook({ onAddForm }) {
           <div className="space-y-6">
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-slate-900">
-                  Monitoring Terakhir
-                </h3>
+                <h3 className="text-lg font-semibold text-slate-900">Monitoring Terakhir</h3>
                 {latestRecord && (
                   <button
                     onClick={() => handleView(latestRecord)}
@@ -454,15 +462,11 @@ export default function DashboardBook({ onAddForm }) {
                   </li>
                   <li className="flex justify-between">
                     <span>Omset</span>
-                    <span className="font-semibold text-slate-900">
-                      {toIDR(latestOmset)}
-                    </span>
+                    <span className="font-semibold text-slate-900">{toIDR(latestOmset)}</span>
                   </li>
                   <li className="flex justify-between">
                     <span>Biaya Operasional</span>
-                    <span className="font-semibold text-slate-900">
-                      {toIDR(latestBiaya)}
-                    </span>
+                    <span className="font-semibold text-slate-900">{toIDR(latestBiaya)}</span>
                   </li>
                   <li className="flex justify-between">
                     <span>Laba Bersih</span>
@@ -490,7 +494,7 @@ export default function DashboardBook({ onAddForm }) {
                 <input
                   type="text"
                   value={newNote}
-                  onChange={(e) => setNewNote(e.target.value)}
+                  onChange={(event) => setNewNote(event.target.value)}
                   placeholder="Tulis catatan singkat..."
                   maxLength={100}
                   className="flex-1 px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-200"
@@ -504,9 +508,7 @@ export default function DashboardBook({ onAddForm }) {
               </form>
               <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                 {notes.length === 0 && (
-                  <p className="text-slate-500 text-sm text-center">
-                    Belum ada catatan.
-                  </p>
+                  <p className="text-slate-500 text-sm text-center">Belum ada catatan.</p>
                 )}
                 {notes.map((note) => (
                   <div
@@ -515,10 +517,12 @@ export default function DashboardBook({ onAddForm }) {
                   >
                     <span className="text-slate-800">{note.text}</span>
                     <div className="flex items-center justify-between text-[11px] text-slate-500">
-                      <span>{formatDate(note.createdAt, {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                      })}</span>
+                      <span>
+                        {formatDate(note.createdAt, {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })}
+                      </span>
                       <button
                         onClick={() => handleDeleteNote(note.id)}
                         className="text-rose-500 hover:text-rose-600"
@@ -538,23 +542,15 @@ export default function DashboardBook({ onAddForm }) {
       {showChart && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl p-6 relative">
-            <h3 className="text-lg font-bold text-center mb-4">
-              Grafik Perkembangan Omset
-            </h3>
+            <h3 className="text-lg font-bold text-center mb-4">Grafik Perkembangan Omset</h3>
             <div className="w-full h-[320px]">
               <ResponsiveContainer width="100%" height="100%">
                 <RLineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="tanggal" />
-                  <YAxis tickFormatter={(v) => v.toLocaleString("id-ID")} />
-                  <Tooltip formatter={(v) => v.toLocaleString("id-ID")} />
-                  <Line
-                    type="monotone"
-                    dataKey="omset"
-                    stroke="#3B82F6"
-                    strokeWidth={2}
-                    dot
-                  />
+                  <YAxis tickFormatter={(value) => value.toLocaleString("id-ID")} />
+                  <Tooltip formatter={(value) => value.toLocaleString("id-ID")} />
+                  <Line type="monotone" dataKey="omset" stroke="#3B82F6" strokeWidth={2} dot />
                 </RLineChart>
               </ResponsiveContainer>
             </div>
@@ -570,14 +566,9 @@ export default function DashboardBook({ onAddForm }) {
 
       {/* External Modals */}
       {editData && (
-        <FormModalMSE
-          existingData={editData}
-          onClose={() => setEditData(null)}
-        />
+        <FormModalMSE existingData={editData} onClose={() => setEditData(null)} />
       )}
-      {viewData && (
-        <DetailModalBook data={viewData} onClose={() => setViewData(null)} />
-      )}
+      {viewData && <DetailModalBook data={viewData} onClose={() => setViewData(null)} />}
     </>
   );
 }

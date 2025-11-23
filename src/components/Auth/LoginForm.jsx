@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
-import { db } from "../../firebase";
-import { ref, get } from "firebase/database";
+import { get, ref } from "firebase/database";
 import { useNavigate } from "react-router-dom";
+
+import { db } from "../../firebase";
 
 export default function LoginForm() {
   const [phone, setPhone] = useState("");
@@ -12,8 +13,9 @@ export default function LoginForm() {
 
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  // Menangani proses login berbasis nomor HP yang dikonversi ke email pseudo
+  const handleLogin = async (event) => {
+    event.preventDefault();
     setError("");
     setLoading(true);
 
@@ -33,13 +35,17 @@ export default function LoginForm() {
 
       if (!snapshot.exists()) {
         setError("Data UMKM tidak ditemukan. Silakan hubungi administrator.");
-        setLoading(false);
         return;
       }
 
       navigate("/dashboard");
     } catch (err) {
-      setError("Login gagal. Pastikan nomor HP dan password benar.");
+      console.error("Login gagal:", err);
+      const errorMessage =
+        err.code === "auth/invalid-credential"
+          ? "Nomor HP atau password tidak sesuai."
+          : "Login gagal. Pastikan nomor HP dan password benar.";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -63,7 +69,7 @@ export default function LoginForm() {
           type="tel"
           id="phone"
           value={phone}
-          onChange={(e) => setPhone(e.target.value)}
+          onChange={(event) => setPhone(event.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-300 text-gray-900 placeholder-gray-400 text-sm transition"
           placeholder="Contoh: 081234567890"
           required
@@ -81,7 +87,7 @@ export default function LoginForm() {
           type="password"
           id="password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(event) => setPassword(event.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-300 text-gray-900 placeholder-gray-400 text-sm transition"
           placeholder="Masukkan password Anda"
           required

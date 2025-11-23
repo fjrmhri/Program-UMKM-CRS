@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, getAuth } from "firebase/auth";
 import { ref, set } from "firebase/database";
-import { db } from "../../firebase";
 import { useNavigate } from "react-router-dom";
+
+import { db } from "../../firebase";
 
 const initialMeta = {
   nama: "",
@@ -22,12 +23,13 @@ export default function SignUpForm() {
 
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setMeta({ ...meta, [e.target.name]: e.target.value });
+  const handleChange = (event) => {
+    setMeta({ ...meta, [event.target.name]: event.target.value });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // Menyimpan akun baru beserta metadata UMKM ke Realtime Database
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setError("");
     setLoading(true);
 
@@ -49,6 +51,7 @@ export default function SignUpForm() {
 
       navigate("/dashboard");
     } catch (err) {
+      console.error("Registrasi gagal:", err);
       let errorMessage = "Registrasi gagal. Silakan coba lagi.";
       if (err.code === "auth/email-already-in-use") {
         errorMessage =
@@ -133,7 +136,7 @@ export default function SignUpForm() {
           type="password"
           id="password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(event) => setPassword(event.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-300 text-gray-900 placeholder-gray-400 text-sm transition"
           placeholder="Minimal 6 karakter"
           required

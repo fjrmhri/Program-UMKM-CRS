@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
-import { ref, onValue } from "firebase/database";
+import { onValue, ref } from "firebase/database";
+
 import { db } from "../firebase";
 
 const AuthContext = createContext(null);
@@ -10,6 +11,7 @@ export const AuthProvider = ({ children }) => {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Memantau sesi pengguna dan mengambil profil dari Realtime Database
   useEffect(() => {
     const auth = getAuth();
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -17,10 +19,17 @@ export const AuthProvider = ({ children }) => {
         setUser(firebaseUser);
         const userRef = ref(db, `users/${firebaseUser.uid}`);
 
-        onValue(userRef, (snap) => {
-          setUserData(snap.val() || null);
-          setLoading(false);
-        });
+        onValue(
+          userRef,
+          (snap) => {
+            setUserData(snap.val() || null);
+            setLoading(false);
+          },
+          (error) => {
+            console.error("Gagal memuat data pengguna:", error);
+            setLoading(false);
+          }
+        );
       } else {
         setUser(null);
         setUserData(null);
@@ -38,7 +47,7 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       setUserData(null);
     } catch (error) {
-      console.error("Logout failed:", error);
+      console.error("Logout gagal:", error);
     }
   };
 
@@ -49,4 +58,5 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);
